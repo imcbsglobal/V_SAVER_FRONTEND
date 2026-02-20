@@ -1,61 +1,16 @@
-/* CATEGORY STRIP */
-.cat-strip {
-  width: 100%;
-  overflow: hidden;
-  background: #eaf6ea;
-  padding: 15px 0;
-  border-bottom: 1px solid #dceede;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* AUTO SCROLL CONTAINER */
-.cat-marquee {
-  display: flex;
-  gap: 24px;
-  width: max-content;
-  animation: scroll-left 22s linear infinite;
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* CATEGORY BOX */
-.cat-box {
-  text-align: center;
-  min-width: 100px;
-}
-
-.cat-icon {
-  width: 70px !important;
-  height: 70px !important;
-  background: #2fa573 !important;
-  color: white !important;
-  margin: 0 auto 6px auto;
-}
-
-.cat-label {
-  font-size: 14px;
-  font-weight: 700;
-  color: #333;
-}
-
-/* SMOOTH LEFT SCROLL KEYFRAMES */
-@keyframes scroll-left {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-/* Better shadows like BigLoot */
-.card {
-  border: 1px solid #e8efe8;
-  box-shadow: 0 4px 12px rgba(31, 139, 82, 0.05);
-}
-.nav-item {
-  font-weight: 700;
-  color: #2fa573;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.nav-item:hover {
-  color: #176d47;
+.App {
+  margin: 0;
+  padding: 0;
 }

@@ -1,0 +1,453 @@
+// Sidebar.scss — Vsaver User Sidebar | Jira-style orange theme + Mobile responsive
+
+// ── Variables ──────────────────────────────────────────────
+$usr-sidebar-bg      : #c45c10;
+$usr-sidebar-active  : #e87722;
+$usr-sidebar-hover   : rgba(255, 255, 255, 0.12);
+$usr-sidebar-border  : rgba(255, 255, 255, 0.18);
+$usr-white           : #ffffff;
+$usr-text-muted      : rgba(255, 255, 255, 0.7);
+$usr-text-main       : rgba(255, 255, 255, 0.88);
+$usr-shadow          : rgba(60, 20, 0, 0.25);
+
+$usr-width-open      : 240px;
+$usr-width-closed    : 64px;
+$usr-topbar-h        : 56px;
+$usr-breakpoint      : 768px;
+
+// ── Mobile top bar ─────────────────────────────────────────
+.usr-mobile-topbar {
+  display: none;
+
+  @media (max-width: $usr-breakpoint) {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: $usr-topbar-h;
+    background: $usr-sidebar-bg;
+    padding: 0 16px;
+    z-index: 1100;
+    box-shadow: 0 2px 8px $usr-shadow;
+  }
+
+  .usr-mobile-brand {
+    font-size: 18px;
+    font-weight: 700;
+    color: $usr-white;
+    letter-spacing: 0.5px;
+  }
+}
+
+.usr-mobile-hamburger {
+  display: none;
+
+  @media (max-width: $usr-breakpoint) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: $usr-white;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    svg { width: 24px; height: 24px; }
+
+    &:hover { background: $usr-sidebar-hover; }
+    &:active { background: rgba(255, 255, 255, 0.2); }
+  }
+}
+
+// ── Backdrop overlay ───────────────────────────────────────
+.usr-sidebar-overlay {
+  display: none;
+
+  @media (max-width: $usr-breakpoint) {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1099;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+
+    &.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+  }
+}
+
+// ── Sidebar ────────────────────────────────────────────────
+.usr-sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  background: $usr-sidebar-bg;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.2s ease, transform 0.25s ease;
+  z-index: 1100;
+  box-shadow: 2px 0 8px $usr-shadow;
+
+  &.open  { width: $usr-width-open; }
+  &.closed { width: $usr-width-closed; }
+
+  // ── Mobile: full-height drawer ──
+  @media (max-width: $usr-breakpoint) {
+    top: 0;
+    width: $usr-width-open !important;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: none;
+
+    &.open {
+      transform: translateX(0);
+      box-shadow: 4px 0 24px $usr-shadow;
+    }
+
+    &.closed {
+      transform: translateX(-100%);
+    }
+  }
+
+  /* ── Header ─────────────────────────────────────────────── */
+  .usr-sidebar-header {
+    padding: 0 16px;
+    border-bottom: 1px solid $usr-sidebar-border;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+
+    @media (max-width: $usr-breakpoint) {
+      height: $usr-topbar-h;
+    }
+
+    .usr-branding {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+
+      .usr-brand-logo {
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        svg { width: 100%; height: 100%; color: $usr-white; }
+      }
+
+      .usr-brand-text {
+        flex: 1;
+        .usr-brand-title {
+          font-size: 20px;
+          font-weight: 700;
+          color: $usr-white;
+          margin: 0;
+          line-height: 1.2;
+          letter-spacing: 0.5px;
+        }
+      }
+    }
+
+    .usr-branding-collapsed {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      svg { width: 32px; height: 32px; color: $usr-white; }
+    }
+  }
+
+  // ── Mobile close button ──
+  .usr-close-btn {
+    display: none;
+
+    @media (max-width: $usr-breakpoint) {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      color: $usr-white;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s ease;
+
+      svg { width: 22px; height: 22px; }
+      &:hover { background: $usr-sidebar-hover; }
+    }
+  }
+
+  /* ── Nav list ────────────────────────────────────────────── */
+  .usr-nav-list {
+    flex: 1;
+    padding: 8px 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+
+    &::-webkit-scrollbar { width: 4px; }
+    &::-webkit-scrollbar-track { background: transparent; }
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+      &:hover { background: rgba(255, 255, 255, 0.3); }
+    }
+  }
+
+  /* ── Nav item ────────────────────────────────────────────── */
+  .usr-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    margin: 2px 8px;
+    border-radius: 4px;
+    text-decoration: none;
+    color: $usr-text-main;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    cursor: pointer;
+    position: relative;
+    min-height: 44px;
+
+    @media (max-width: $usr-breakpoint) {
+      min-height: 52px;
+      padding: 12px 16px;
+      font-size: 15px;
+    }
+
+    .usr-nav-icon {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      svg { width: 20px; height: 20px; }
+
+      @media (max-width: $usr-breakpoint) {
+        svg { width: 22px; height: 22px; }
+      }
+    }
+
+    .usr-nav-label {
+      font-size: 14px;
+      font-weight: 400;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      @media (max-width: $usr-breakpoint) {
+        font-size: 15px;
+      }
+    }
+
+    &:hover { background: $usr-sidebar-hover; color: $usr-white; }
+
+    &.active {
+      background: $usr-sidebar-active;
+      color: $usr-white;
+      font-weight: 500;
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: $usr-white;
+        border-radius: 0 2px 2px 0;
+      }
+    }
+  }
+
+  /* ── Footer ──────────────────────────────────────────────── */
+  .usr-sidebar-footer {
+    padding: 16px 8px;
+    border-top: 1px solid $usr-sidebar-border;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+
+    .usr-collapse-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      min-height: 36px;
+
+      svg { width: 20px; height: 20px; flex-shrink: 0; }
+      span { white-space: nowrap; }
+
+      &:hover { background: $usr-sidebar-hover; color: $usr-white; }
+
+      @media (max-width: $usr-breakpoint) {
+        display: none;
+      }
+    }
+
+    .usr-user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px;
+      border-radius: 4px;
+      transition: background 0.15s ease;
+      cursor: pointer;
+      margin-top: 4px;
+
+      &:hover { background: rgba(255, 255, 255, 0.1); }
+
+      .usr-user-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: $usr-white;
+        color: $usr-sidebar-bg;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+
+      .usr-user-details {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        overflow: hidden;
+        min-width: 0;
+
+        .usr-user-name {
+          font-size: 14px;
+          font-weight: 500;
+          color: $usr-white;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .usr-user-role {
+          font-size: 12px;
+          color: $usr-text-muted;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+      }
+    }
+
+    .usr-logout-btn {
+      width: 100%;
+      padding: 10px 12px;
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 4px;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 14px;
+      font-weight: 400;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      min-height: 44px;
+
+      svg { width: 16px; height: 16px; }
+
+      &:hover {
+        background: $usr-sidebar-hover;
+        border-color: rgba(255, 255, 255, 0.35);
+        color: $usr-white;
+      }
+      &:active { background: rgba(255, 255, 255, 0.18); }
+    }
+
+    .usr-logout-icon-btn {
+      width: 48px;
+      height: 48px;
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 4px;
+      color: rgba(255, 255, 255, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      margin: 0 auto;
+
+      svg { width: 20px; height: 20px; }
+
+      &:hover {
+        background: $usr-sidebar-hover;
+        border-color: rgba(255, 255, 255, 0.35);
+        color: $usr-white;
+      }
+      &:active { background: rgba(255, 255, 255, 0.18); }
+    }
+  }
+
+  /* ── Collapsed state (desktop) ───────────────────────────── */
+  &.closed {
+    .usr-nav-list { padding: 8px 0; }
+
+    .usr-nav-item {
+      justify-content: center;
+      padding: 10px 8px;
+      margin: 2px 8px;
+      &.active::before { display: none; }
+    }
+
+    .usr-sidebar-footer {
+      .usr-collapse-btn {
+        justify-content: center;
+        padding: 8px;
+      }
+    }
+  }
+}
+
+// ── Page content offset helper ─────────────────────────────
+// Add .usr-has-sidebar to your main content wrapper
+.usr-has-sidebar {
+  transition: margin-left 0.2s ease;
+
+  @media (min-width: #{$usr-breakpoint + 1px}) {
+    &.sidebar-open   { margin-left: $usr-width-open; }
+    &.sidebar-closed { margin-left: $usr-width-closed; }
+  }
+
+  @media (max-width: $usr-breakpoint) {
+    margin-left: 0 !important;
+    padding-top: $usr-topbar-h;
+  }
+}
