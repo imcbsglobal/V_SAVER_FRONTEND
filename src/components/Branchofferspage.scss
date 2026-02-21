@@ -1,0 +1,586 @@
+@use 'sass:color';
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap');
+
+// ── Variables ──────────────────────────────────────────────
+$gold:        #c9952a;
+$gold-light:  #f0c96a;
+$dark:        #1a1208;
+$card-bg:     #fffdf7;
+$text-muted:  #7a6e5a;
+$border:      #e8dfc8;
+$accent:      #e85d2f;
+$bg:          #faf6ee;
+$green:       #22c55e;
+
+// ── Reset ──────────────────────────────────────────────────
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+// ── Page ───────────────────────────────────────────────────
+.bop-page {
+  min-height: 100vh;
+  background: $bg;
+  font-family: 'DM Sans', sans-serif;
+  padding-bottom: 60px;
+
+  &::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 40% at 50% -10%, rgba($gold, 0.18) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 30% at 90% 100%, rgba($accent, 0.08) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+// ── Header ─────────────────────────────────────────────────
+.bop-header {
+  position: relative;
+  z-index: 1;
+  background: $dark;
+  padding: 28px 24px 24px;
+  text-align: center;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, $gold, $gold-light, $gold, transparent);
+  }
+
+  .bop-shop-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: $gold;
+    margin-bottom: 6px;
+  }
+
+  .bop-branch-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 8px;
+    line-height: 1.2;
+  }
+
+  .bop-branch-meta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+
+    span {
+      font-size: 12px;
+      color: rgba(#fff, 0.55);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+
+      svg { opacity: 0.7; }
+    }
+  }
+}
+
+// ── Section title ───────────────────────────────────────────
+.bop-section-title {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 28px 24px 8px;
+
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: $dark;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+
+    &::before,
+    &::after {
+      content: '';
+      display: inline-block;
+      width: 32px;
+      height: 1px;
+      background: $gold;
+      vertical-align: middle;
+    }
+  }
+
+  .bop-offer-count {
+    margin-top: 6px;
+    font-size: 12px;
+    color: $text-muted;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+}
+
+// ── 2-Column Grid ───────────────────────────────────────────
+.bop-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 12px 14px 0;
+  max-width: 600px;
+  margin: 0 auto;
+
+  &.single {
+    grid-template-columns: 1fr;
+    max-width: 400px;
+  }
+}
+
+// ── Offer Card ──────────────────────────────────────────────
+.bop-offer-card {
+  background: $card-bg;
+  border-radius: 14px;
+  border: 1px solid $border;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba($dark, 0.08), 0 1px 3px rgba($dark, 0.04);
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  animation: cardIn 0.4s ease both;
+
+  @for $i from 1 through 20 {
+    &:nth-child(#{$i}) { animation-delay: #{($i - 1) * 0.07}s; }
+  }
+
+  &:active {
+    transform: scale(0.97);
+    box-shadow: 0 1px 4px rgba($dark, 0.1);
+  }
+
+  .bop-card-thumb {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background: #ede8df;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .bop-thumb-validity {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: linear-gradient(transparent, rgba(#000, 0.78));
+      padding: 18px 8px 7px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      color: rgba(#fff, 0.92);
+      font-family: 'DM Sans', sans-serif;
+
+      svg { flex-shrink: 0; }
+    }
+
+    .bop-img-count {
+      position: absolute;
+      top: 7px; right: 7px;
+      background: rgba(#000, 0.6);
+      border-radius: 20px;
+      font-size: 10px;
+      color: #fff;
+      padding: 2px 7px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      font-family: 'DM Sans', sans-serif;
+    }
+  }
+
+  .bop-card-footer {
+    padding: 9px 10px 11px;
+
+    .bop-card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: $dark;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .bop-card-subdesc {
+      font-size: 11px;
+      color: $text-muted;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+}
+
+// ── Empty state ─────────────────────────────────────────────
+.bop-empty {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 60px 24px;
+
+  .bop-empty-icon {
+    font-size: 52px;
+    margin-bottom: 16px;
+    opacity: 0.6;
+  }
+
+  p {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    color: $text-muted;
+    margin: 0;
+  }
+
+  small {
+    display: block;
+    margin-top: 6px;
+    font-size: 13px;
+    color: color.adjust($text-muted, $lightness: 15%);
+  }
+}
+
+// ── Loading ─────────────────────────────────────────────────
+.bop-loading {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: $bg;
+  gap: 18px;
+
+  .bop-spinner {
+    width: 44px; height: 44px;
+    border: 3px solid $border;
+    border-top-color: $gold;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  p {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    color: $text-muted;
+    margin: 0;
+    letter-spacing: 1px;
+  }
+}
+
+// ── Error ───────────────────────────────────────────────────
+.bop-error {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: $bg;
+  padding: 24px;
+  text-align: center;
+
+  .bop-error-icon { font-size: 48px; margin-bottom: 12px; }
+
+  p {
+    font-size: 15px;
+    color: $accent;
+    margin: 0;
+  }
+}
+
+// ── Footer ─────────────────────────────────────────────────
+.bop-footer {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  margin-top: 36px;
+  padding: 0 24px;
+
+  p {
+    font-size: 11px;
+    color: color.adjust($text-muted, $lightness: 20%);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// ── POPUP MODAL ───────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+
+// Full-screen overlay, flex column: topbar | scroller | bottom-panel
+.bop-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  background: #f5f2ed;
+  animation: fadeIn 0.2s ease;
+  // prevent body scroll bleed
+  overflow: hidden;
+}
+
+// ── Top bar (fixed height, sits above scroller) ───────────
+.bop-modal-topbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: #fff;
+  border-bottom: 1px solid $border;
+  z-index: 20;
+
+  .bop-modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: $dark;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 10px;
+  }
+
+  .bop-modal-close {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: rgba(#000, 0.06);
+    border: 1px solid rgba(#000, 0.1);
+    color: $dark;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s;
+
+    &:hover { background: rgba(#000, 0.12); }
+  }
+}
+
+// Dot indicators in topbar
+.bop-modal-dots-v {
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+  align-items: center;
+  margin-right: 10px;
+
+  span {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(#000, 0.15);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    flex-shrink: 0;
+
+    &.active {
+      background: $gold;
+      transform: scale(1.4);
+    }
+  }
+}
+
+// ── Image scroller: takes all remaining height between topbar and panel ──
+.bop-modal-scroll-feed {
+  flex: 1;                        // fills exactly the space between topbar & bottom panel
+  min-height: 0;                  // CRITICAL: lets flex child shrink below content size
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  background: #f5f2ed;
+  padding: 1px 0;
+
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+// ── Each slide = 100% of the scroller's visible height — no gaps ──
+.bop-feed-slide {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  width: 100%;
+  height: calc(100% - 0px);
+  margin-bottom: 0px;
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f2ed;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  .bop-feed-empty {
+    color: #888;
+    font-size: 14px;
+  }
+}
+
+// "1 / 3" badge
+.bop-feed-counter {
+  position: absolute;
+  top: 12px; right: 12px;
+  background: rgba(#000, 0.5);
+  backdrop-filter: blur(6px);
+  border-radius: 20px;
+  font-size: 11px;
+  color: #fff;
+  padding: 3px 10px;
+  font-family: 'DM Sans', sans-serif;
+  z-index: 10;
+}
+
+// Swipe hint
+.bop-swipe-hint {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: rgba(#fff, 0.7);
+  font-size: 11px;
+  font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.5px;
+  z-index: 10;
+  animation: swipeHint 2.5s ease 1s forwards;
+  pointer-events: none;
+
+  span {
+    font-size: 18px;
+    animation: bounceUp 1.2s ease infinite;
+  }
+}
+
+// ── Bottom panel: always visible below scroller ────────────
+.bop-modal-bottom-panel {
+  flex-shrink: 0;
+  background: #fff;
+  border-top: 1px solid $border;
+  padding: 12px 16px 16px;
+  z-index: 20;
+
+  .bop-bottom-desc {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: $text-muted;
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+
+  .bop-bottom-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .bop-bottom-validity {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: $gold;
+    font-family: 'DM Sans', sans-serif;
+    flex-shrink: 0;
+    svg { flex-shrink: 0; }
+  }
+
+  .bop-bottom-actions {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    justify-content: flex-end;
+
+    a, button {
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+
+      &:active { opacity: 0.75; }
+    }
+
+    .bop-btn-share {
+      background: #f5f4f0;
+      color: $dark;
+      border: 1px solid $border;
+    }
+
+    .bop-btn-download {
+      background: linear-gradient(135deg, $gold, color.adjust($gold, $lightness: -10%));
+      color: #fff;
+    }
+  }
+}
+
+// ── Keyframes ───────────────────────────────────────────────
+@keyframes swipeHint {
+  0%   { opacity: 1; }
+  70%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes bounceUp {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

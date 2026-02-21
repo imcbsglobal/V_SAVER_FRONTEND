@@ -1354,3 +1354,182 @@ select.om-input { cursor: pointer; }
 
   .om-alert { font-size: 12px; padding: 9px 12px; }
 }
+// ── QR Button in table ────────────────────────────────────────────────────────
+.om-btn-qr {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: #e3fcef;
+  color: #00875a;
+
+  svg { width: 14px; height: 14px; }
+  &:hover:not(:disabled) { background: #abf5d1; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.om-field-hint {
+  font-size: 10.5px;
+  color: #97a0af;
+  font-weight: 400;
+  margin-top: 2px;
+}
+
+// ── QR Modal overlay ─────────────────────────────────────────────────────────
+.om-qr-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(9, 30, 66, 0.54);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: omFadeIn 0.18s ease;
+}
+
+.om-qr-modal {
+  background: #ffffff;
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(9, 30, 66, 0.3);
+  width: 100%;
+  max-width: 680px;
+  max-height: 84vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.om-qr-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 2px solid #dfe1e6;
+  background: #fafbfc;
+
+  h3 { font-size: 15px; font-weight: 600; color: #172b4d; margin: 0 0 3px; }
+  p  { font-size: 12px; color: #5e6c84; margin: 0; }
+}
+
+.om-qr-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 18px;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb { background: #dfe1e6; border-radius: 4px; }
+}
+
+.om-qr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.om-qr-card {
+  border: 1px solid #dfe1e6;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fafbfc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 10px;
+}
+
+.om-qr-card-header {
+  width: 100%;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid #dfe1e6;
+  background: #f4f5f7;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.om-qr-branch-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #172b4d;
+}
+
+.om-qr-branch-code {
+  font-size: 11px;
+  color: #5e6c84;
+}
+
+.om-qr-img-wrap {
+  padding: 12px;
+  img {
+    width: 160px;
+    height: 160px;
+    display: block;
+    object-fit: contain;
+    border: 1px solid #dfe1e6;
+    border-radius: 4px;
+  }
+}
+
+.om-qr-hint {
+  font-size: 11px;
+  color: #5e6c84;
+  text-align: center;
+  margin: 0 0 8px;
+}
+
+.om-qr-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+}
+
+.om-qr-preview-link {
+  font-size: 12px;
+  color: #0052cc;
+  font-weight: 600;
+  text-decoration: none;
+  &:hover { text-decoration: underline; }
+}
+
+.om-qr-print-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  height: 26px;
+  border: none;
+  border-radius: 3px;
+  background: #0052cc;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+
+  svg { width: 12px; height: 12px; }
+  &:hover { background: #0065ff; }
+}
+
+.om-qr-not-ready {
+  font-size: 12px;
+  color: #97a0af;
+  text-align: center;
+  padding: 20px 10px;
+}
+
+// ── QR modal responsive ───────────────────────────────────────────────────────
+@media (max-width: 480px) {
+  .om-qr-overlay { padding: 0; align-items: flex-end; }
+  .om-qr-modal   { max-width: 100%; border-radius: 10px 10px 0 0; max-height: 88vh; }
+  .om-qr-grid    { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .om-qr-img-wrap img { width: 120px; height: 120px; }
+}

@@ -9,6 +9,7 @@ import ViewProducts from "./components/ViewProducts";
 import OfferMaster from "./components/OfferMaster";
 import AdminOfferMaster from "./components/AdminOfferMaster";
 import AdminBranchMaster from "./components/Adminbranchmaster";
+import BranchOffersPage from "./components/BranchOffersPage"; // ✅ NEW
 import { setAuthToken } from "./services/api";
 import './App.css';
 
@@ -119,6 +120,13 @@ function AppRoutes() {
   return (
     <div className="App">
       <Routes>
+
+        {/* ✅ PUBLIC ROUTE - No auth required - for QR code scanning */}
+        <Route
+          path="/branch/:branchId/offers"
+          element={<BranchOffersPage />}
+        />
+
         {/* Login Route */}
         <Route
           path="/login"

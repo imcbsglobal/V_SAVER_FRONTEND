@@ -1,5 +1,5 @@
 // ============================================================================
-// AdminOfferMaster Component — Fully redesigned with om- prefixed classes
+// AdminOfferMaster Component
 // ============================================================================
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -10,10 +10,10 @@ import { API_BASE_URL } from '../services/config';
 const ROWS_PER_PAGE = 8;
 
 const AdminOfferMaster = ({ onLogout, userData }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [adminName, setAdminName]         = useState('Admin');
-  const [offers, setOffers]               = useState([]);
-  const [branches, setBranches]           = useState([]);
+  const [isSidebarOpen, setIsSidebarOpen]       = useState(true);
+  const [adminName, setAdminName]               = useState('Admin');
+  const [offers, setOffers]                     = useState([]);
+  const [branches, setBranches]                 = useState([]);
   const [selectedBranches, setSelectedBranches] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen]     = useState(false);
   const [searchTerm, setSearchTerm]             = useState('');
@@ -22,22 +22,19 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
   const [formData, setFormData] = useState({
     title: '', description: '', validFrom: '', validTo: '', status: 'active', files: []
   });
-  const [filePreviews, setFilePreviews] = useState([]);
-  const [isEditing, setIsEditing]       = useState(false);
-  const [editingId, setEditingId]       = useState(null);
-  const [loading, setLoading]           = useState(false);
-  const [error, setError]               = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
-  const [tableSearch, setTableSearch]   = useState('');
-  const [currentPage, setCurrentPage]   = useState(1);
-  const [mediaModal, setMediaModal]     = useState(null);
+  const [filePreviews, setFilePreviews]         = useState([]);
+  const [isEditing, setIsEditing]               = useState(false);
+  const [editingId, setEditingId]               = useState(null);
+  const [loading, setLoading]                   = useState(false);
+  const [error, setError]                       = useState(null);
+  const [successMessage, setSuccessMessage]     = useState(null);
+  const [tableSearch, setTableSearch]           = useState('');
+  const [currentPage, setCurrentPage]           = useState(1);
+  const [mediaModal, setMediaModal]             = useState(null);
+  const [qrModal, setQrModal]                   = useState(null); // { offerTitle, branches }
 
-  // ✅ FIX: Real stats from backend instead of calculating from local array
   const [stats, setStats] = useState({
-    total: 0,
-    active: 0,
-    inactive: 0,
-    scheduled: 0,
+    total: 0, active: 0, inactive: 0, scheduled: 0,
   });
 
   // ── Effects ──────────────────────────────────────────────────────────────
@@ -53,7 +50,7 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
     }
     fetchOffers();
     fetchBranches();
-    fetchStats(); // ✅ FIX: Fetch real stats on mount
+    fetchStats();
   }, [userData]);
 
   // Close dropdown on outside click
@@ -77,17 +74,14 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   const handleToggleSidebar = () => setIsSidebarOpen(p => !p);
-  const getAuthToken  = () => localStorage.getItem('access_token');
-  const getHeaders    = () => ({
+  const getAuthToken = () => localStorage.getItem('access_token');
+  const getHeaders   = () => ({
     'Authorization': `Bearer ${getAuthToken()}`,
     'Content-Type': 'application/json'
   });
 
   // ── API ───────────────────────────────────────────────────────────────────
 
-  // ✅ FIX: Fetch real stats from backend
-  // Previously stats were calculated from the local offers array which is wrong
-  // when pagination is active — total showed only loaded page count, not real total
   const fetchStats = async () => {
     try {
       const r = await fetch(`${API_BASE_URL}/offer-master/stats/`, { headers: getHeaders() });
@@ -100,25 +94,23 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
         scheduled: d.scheduled || 0,
       });
     } catch (err) {
-      console.error('Stats fetch failed, falling back to local count:', err);
-      // Fallback: calculate from local offers array if API fails
-      setStats({
-        total:     offers.length,
-        active:    offers.filter(o => o.status === 'active').length,
-        inactive:  offers.filter(o => o.status === 'inactive').length,
-        scheduled: offers.filter(o => o.status === 'scheduled').length,
-      });
+      console.error('Stats fetch failed:', err);
     }
   };
 
+  // fetchBranches: backend returns { success, branches: [{id, branch_name, branch_code, shop_name, ...}] }
   const fetchBranches = async () => {
     try {
       const r = await fetch(`${API_BASE_URL}/branches/dropdown/`, { headers: getHeaders() });
       if (!r.ok) throw new Error('Failed to fetch branches');
       const d = await r.json();
-      if (d.success) setBranches(d.branches);
+      if (d.success && Array.isArray(d.branches)) {
+        setBranches(d.branches);
+      } else {
+        setBranches([]);
+      }
     } catch (err) {
-      console.error(err);
+      console.error('fetchBranches error:', err);
       setError('Failed to load branches');
     }
   };
@@ -210,31 +202,32 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
   };
 
   const handleSubmit = async () => {
-    // ✅ FIX: Validate all required fields before submitting
-    // Previously only branch selection was validated — title and dates were not checked
-    if (!formData.title.trim()) { setError('Offer title is required'); return; }
-    if (!formData.validFrom)    { setError('Valid From date is required'); return; }
-    if (!formData.validTo)      { setError('Valid To date is required'); return; }
+    if (!formData.title.trim())   { setError('Offer title is required'); return; }
+    if (!formData.validFrom)      { setError('Valid From date is required'); return; }
+    if (!formData.validTo)        { setError('Valid To date is required'); return; }
     if (formData.validTo < formData.validFrom) { setError('Valid To must be after Valid From'); return; }
     if (!selectedBranches.length) { setError('Please select at least one branch'); return; }
 
     setLoading(true); setError(null); setSuccessMessage(null);
     try {
       const fd = new FormData();
-      fd.append('title', formData.title);
+      fd.append('title',       formData.title);
       fd.append('description', formData.description);
-      fd.append('valid_from', formData.validFrom);
-      fd.append('valid_to', formData.validTo);
-      fd.append('status', formData.status);
+      fd.append('valid_from',  formData.validFrom);
+      fd.append('valid_to',    formData.validTo);
+      fd.append('status',      formData.status);
       selectedBranches.forEach(id => fd.append('branch_ids', id));
       formData.files.forEach(f => fd.append('files', f));
 
       const url    = isEditing ? `${API_BASE_URL}/offer-master/${editingId}/` : `${API_BASE_URL}/offer-master/`;
       const method = isEditing ? 'PATCH' : 'POST';
-      const r = await fetch(url, { method, headers: { 'Authorization': `Bearer ${getAuthToken()}` }, body: fd });
+      const r = await fetch(url, {
+        method,
+        headers: { 'Authorization': `Bearer ${getAuthToken()}` },
+        body: fd
+      });
 
       if (!r.ok) {
-        // ✅ FIX: Better error extraction — show actual backend message not just generic error
         const d = await r.json();
         const msg = d.error || d.detail || Object.values(d)?.[0]?.[0] || 'Failed to save offer';
         throw new Error(msg);
@@ -242,30 +235,42 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
 
       setSuccessMessage(isEditing ? 'Offer updated!' : 'Offer created!');
       setFormData({ title:'', description:'', validFrom:'', validTo:'', status:'active', files:[] });
-      setFilePreviews([]); setSelectedBranches([]);
-      setIsEditing(false); setEditingId(null);
+      setFilePreviews([]);
+      setSelectedBranches([]);
+      setIsEditing(false);
+      setEditingId(null);
       await fetchOffers();
-      fetchStats(); // ✅ FIX: Refresh stats after create/update
-    } catch (err) { setError(err.message); }
-    finally { setLoading(false); }
+      fetchStats();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEdit = (offer) => {
     setFormData({
-      title: offer.title, description: offer.description || '',
-      validFrom: offer.valid_from, validTo: offer.valid_to,
-      status: offer.status, files: []
+      title:       offer.title,
+      description: offer.description || '',
+      validFrom:   offer.valid_from,
+      validTo:     offer.valid_to,
+      status:      offer.status,
+      files:       []
     });
     setFilePreviews([]);
     setSelectedBranches(offer.branches?.map(b => b.id) || []);
-    setIsEditing(true); setEditingId(offer.id);
+    setIsEditing(true);
+    setEditingId(offer.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCancel = () => {
     setFormData({ title:'', description:'', validFrom:'', validTo:'', status:'active', files:[] });
-    setFilePreviews([]); setSelectedBranches([]);
-    setIsEditing(false); setEditingId(null); setError(null);
+    setFilePreviews([]);
+    setSelectedBranches([]);
+    setIsEditing(false);
+    setEditingId(null);
+    setError(null);
   };
 
   const handleDelete = async (id) => {
@@ -276,17 +281,52 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
       if (!r.ok) throw new Error('Failed to delete offer');
       setSuccessMessage('Offer deleted!');
       await fetchOffers();
-      fetchStats(); // ✅ FIX: Refresh stats after delete
-    } catch (err) { setError(err.message); }
-    finally { setLoading(false); }
+      fetchStats();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Print QR ─────────────────────────────────────────────────────────────
+  const handlePrintQR = (branch) => {
+    if (!branch.qr_code_url) return;
+    const win = window.open('', '_blank', 'width=420,height=560');
+    win.document.write(`
+      <!DOCTYPE html><html>
+      <head><title>QR - ${branch.branch_name}</title>
+      <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { display:flex; flex-direction:column; align-items:center; justify-content:center;
+               min-height:100vh; font-family:sans-serif; background:#fff; padding:24px; }
+        h2  { font-size:20px; color:#1a1a2e; margin-bottom:4px; text-align:center; }
+        p   { font-size:13px; color:#666; margin-bottom:20px; text-align:center; }
+        img { width:260px; height:260px; border:1px solid #eee; border-radius:8px; display:block; }
+        small { margin-top:16px; font-size:11px; color:#999; text-align:center; }
+      </style></head>
+      <body>
+        <h2>${branch.branch_name}</h2>
+        <p>${branch.branch_code}</p>
+        <img src="${branch.qr_code_url}" alt="QR Code"
+          onload="window.print(); setTimeout(()=>window.close(),500);" />
+        <small>Scan to view all active offers</small>
+      </body></html>`);
+    win.document.close();
   };
 
   // ── Derived data ──────────────────────────────────────────────────────────
-  const filteredBranches = branches.filter(b =>
-    b.branch_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    b.branch_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    b.shop_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+
+  // branches from dropdown API have: branch_name, branch_code, shop_name
+  const filteredBranches = branches.filter(b => {
+    const q = searchTerm.toLowerCase();
+    if (!q) return true;
+    return (
+      b.branch_name?.toLowerCase().includes(q) ||
+      b.branch_code?.toLowerCase().includes(q) ||
+      b.shop_name?.toLowerCase().includes(q)
+    );
+  });
 
   const filteredOffers = offers.filter(o => {
     const q = tableSearch.toLowerCase();
@@ -295,7 +335,10 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
       o.title?.toLowerCase().includes(q) ||
       o.status?.toLowerCase().includes(q) ||
       o.description?.toLowerCase().includes(q) ||
-      o.branches?.some(b => b.branch_name?.toLowerCase().includes(q) || b.branch_code?.toLowerCase().includes(q))
+      o.branches?.some(b =>
+        b.branch_name?.toLowerCase().includes(q) ||
+        b.branch_code?.toLowerCase().includes(q)
+      )
     );
   });
 
@@ -306,7 +349,7 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
 
   const formatDate = (ds) => {
     if (!ds) return 'N/A';
-    return new Date(ds).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
+    return new Date(ds).toLocaleDateString('en-IN', { year:'numeric', month:'short', day:'numeric' });
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -331,7 +374,6 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
           </div>
 
           {/* ── Stats ── */}
-          {/* ✅ FIX: Stats now come from backend API state, not calculated from local array */}
           <div className="om-stats-grid">
             <div className="om-stat-card">
               <div className="om-stat-icon om-icon-blue">🎁</div>
@@ -355,7 +397,9 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
           {error && (
             <div className="om-alert om-alert-error">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
               </svg>
               {error}
             </div>
@@ -363,7 +407,8 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
           {successMessage && (
             <div className="om-alert om-alert-success">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
               </svg>
               {successMessage}
             </div>
@@ -376,7 +421,9 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
                 <div className="om-card-header-icon">{isEditing ? '✏️' : '➕'}</div>
                 <div>
                   <h2 className="om-card-title">{isEditing ? 'Edit Offer' : 'Create New Offer'}</h2>
-                  <p className="om-card-sub">{isEditing ? 'Update offer details below' : 'Fill in details to publish a new offer'}</p>
+                  <p className="om-card-sub">
+                    {isEditing ? 'Update offer details below' : 'Fill in details to publish a new offer'}
+                  </p>
                 </div>
               </div>
               {isEditing && (
@@ -388,7 +435,7 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
 
             <div className="om-form-body">
 
-              {/* Row 1: Title + Status */}
+              {/* Title + Status */}
               <div className="om-grid-2">
                 <div className="om-field">
                   <label className="om-label">Offer Title <span className="om-req">*</span></label>
@@ -398,7 +445,7 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
                     name="title"
                     value={formData.title}
                     onChange={handleInputChange}
-                    placeholder="e.g., Summer Sale 2024"
+                    placeholder="e.g., Diwali Sale 2024"
                     disabled={loading}
                   />
                 </div>
@@ -412,7 +459,7 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
                 </div>
               </div>
 
-              {/* Row 2: Valid From + Valid To */}
+              {/* Valid From + Valid To */}
               <div className="om-grid-2">
                 <div className="om-field">
                   <label className="om-label">Valid From <span className="om-req">*</span></label>
@@ -447,15 +494,18 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
                   )}
                 </label>
 
-                {/* Selected chips row */}
+                {/* Selected chips */}
                 {selectedBranches.length > 0 && (
                   <div className="om-chips-row">
-                    {branches.filter(b => selectedBranches.includes(b.id)).map(b => (
-                      <span key={b.id} className="om-chip">
-                        {b.branch_name}
-                        <button type="button" className="om-chip-remove" onClick={() => handleRemoveBranch(b.id)}>✕</button>
-                      </span>
-                    ))}
+                    {branches
+                      .filter(b => selectedBranches.includes(b.id))
+                      .map(b => (
+                        <span key={b.id} className="om-chip">
+                          {b.branch_name}
+                          <button type="button" className="om-chip-remove" onClick={() => handleRemoveBranch(b.id)}>✕</button>
+                        </span>
+                      ))
+                    }
                   </div>
                 )}
 
@@ -466,9 +516,15 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
                     onClick={() => setIsDropdownOpen(p => !p)}
                   >
                     <span className={selectedBranches.length === 0 ? 'om-dd-placeholder' : 'om-dd-label'}>
-                      {selectedBranches.length === 0 ? 'Click to select branches...' : `${selectedBranches.length} branch${selectedBranches.length > 1 ? 'es' : ''} selected`}
+                      {selectedBranches.length === 0
+                        ? 'Click to select branches...'
+                        : `${selectedBranches.length} branch${selectedBranches.length > 1 ? 'es' : ''} selected`
+                      }
                     </span>
-                    <svg className={`om-dd-arrow ${isDropdownOpen ? 'om-dd-arrow-up' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <svg
+                      className={`om-dd-arrow ${isDropdownOpen ? 'om-dd-arrow-up' : ''}`}
+                      viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                    >
                       <polyline points="6 9 12 15 18 9"/>
                     </svg>
                   </div>
@@ -479,7 +535,8 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
                       <div className="om-dd-search-row">
                         <div className="om-dd-search-box">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                           </svg>
                           <input
                             type="text"
@@ -495,14 +552,17 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
                           className="om-dd-select-all"
                           onClick={e => { e.stopPropagation(); handleSelectAllBranches(); }}
                         >
-                          {selectedBranches.length === filteredBranches.length && filteredBranches.length > 0 ? 'Clear all' : 'Select all'}
+                          {selectedBranches.length === filteredBranches.length && filteredBranches.length > 0
+                            ? 'Clear all' : 'Select all'}
                         </button>
                       </div>
 
-                      {/* List */}
+                      {/* Branch list */}
                       <div className="om-dd-list">
-                        {filteredBranches.length === 0 ? (
-                          <div className="om-dd-empty">No branches found</div>
+                        {branches.length === 0 ? (
+                          <div className="om-dd-empty">No branches available. Create a branch first.</div>
+                        ) : filteredBranches.length === 0 ? (
+                          <div className="om-dd-empty">No branches match your search</div>
                         ) : filteredBranches.map(branch => {
                           const isSelected = selectedBranches.includes(branch.id);
                           return (
@@ -525,7 +585,6 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
                         })}
                       </div>
 
-                      {/* Footer count */}
                       {selectedBranches.length > 0 && (
                         <div className="om-dd-footer">
                           {selectedBranches.length} {selectedBranches.length === 1 ? 'branch' : 'branches'} selected
@@ -536,20 +595,33 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
                 </div>
 
                 {selectedBranches.length === 0 && (
-                  <small className="om-field-error">Please select at least one branch</small>
+                  <small className="om-field-hint">Select at least one branch to assign this offer</small>
                 )}
               </div>
 
               {/* ── File Upload ── */}
               <div className="om-field">
-                <label className="om-label">Upload Files <span className="om-hint">(Images / PDFs, max 10MB each)</span></label>
+                <label className="om-label">
+                  Upload Files <span className="om-hint">(Images / PDFs, max 10MB each)</span>
+                </label>
                 <label className={`om-file-btn ${loading ? 'om-file-btn-disabled' : ''}`}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
                   </svg>
-                  {formData.files.length > 0 ? `${formData.files.length} file${formData.files.length > 1 ? 's' : ''} selected` : 'Choose files'}
-                  <input type="file" accept="image/*,.pdf" onChange={handleFileChange} disabled={loading} multiple style={{ display:'none' }}/>
+                  {formData.files.length > 0
+                    ? `${formData.files.length} file${formData.files.length > 1 ? 's' : ''} selected`
+                    : 'Choose files'
+                  }
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={handleFileChange}
+                    disabled={loading}
+                    multiple
+                    style={{ display:'none' }}
+                  />
                 </label>
               </div>
 
@@ -574,7 +646,7 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
                 </div>
               )}
 
-              {/* ── Form Actions ── */}
+              {/* Form Actions */}
               <div className="om-form-actions">
                 {isEditing && (
                   <button type="button" className="om-btn-cancel" onClick={handleCancel} disabled={loading}>
@@ -602,7 +674,8 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
               <div className="om-toolbar-right">
                 <div className="om-search-box">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                   </svg>
                   <input
                     type="text"
@@ -622,7 +695,9 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
             ) : filteredOffers.length === 0 ? (
               <div className="om-empty-state">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
                 <p>{tableSearch ? 'No offers match your search.' : 'No offers created yet.'}</p>
               </div>
@@ -632,8 +707,14 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
                   <table className="om-table">
                     <thead>
                       <tr>
-                        <th>#</th><th>Offer</th><th>Description</th><th>Validity</th>
-                        <th>Branches</th><th>Files</th><th>Status</th><th>Actions</th>
+                        <th>#</th>
+                        <th>Offer</th>
+                        <th>Description</th>
+                        <th>Validity</th>
+                        <th>Branches</th>
+                        <th>Files</th>
+                        <th>Status</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -641,6 +722,7 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
                         <tr key={offer.id}>
                           <td className="om-td-num">{(currentPage-1)*ROWS_PER_PAGE + idx + 1}</td>
 
+                          {/* Offer name + thumbnail */}
                           <td>
                             <div className="om-offer-cell">
                               {offer.media_files?.length > 0 && offer.media_files[0].media_type === 'image'
@@ -651,14 +733,19 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
                             </div>
                           </td>
 
+                          {/* Description */}
                           <td>
                             <span className="om-desc">
                               {offer.description
-                                ? offer.description.length > 60 ? offer.description.slice(0, 60) + '…' : offer.description
-                                : <span className="om-muted">—</span>}
+                                ? offer.description.length > 60
+                                  ? offer.description.slice(0, 60) + '…'
+                                  : offer.description
+                                : <span className="om-muted">—</span>
+                              }
                             </span>
                           </td>
 
+                          {/* Validity */}
                           <td>
                             <div className="om-validity">
                               <span className="om-date-from">{formatDate(offer.valid_from)}</span>
@@ -667,6 +754,7 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
                             </div>
                           </td>
 
+                          {/* Branches */}
                           <td>
                             <div className="om-branches-cell">
                               {offer.branches?.length > 0 ? (
@@ -682,29 +770,55 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
                             </div>
                           </td>
 
+                          {/* Files */}
                           <td>
                             {offer.media_count > 0 ? (
                               <button
                                 className="om-files-badge"
-                                onClick={() => setMediaModal({ offerId: offer.id, offerTitle: offer.title, files: offer.media_files || [] })}
+                                onClick={() => setMediaModal({
+                                  offerId: offer.id,
+                                  offerTitle: offer.title,
+                                  files: offer.media_files || []
+                                })}
                               >
                                 📎 {offer.media_count} {offer.media_count === 1 ? 'file' : 'files'}
                               </button>
                             ) : <span className="om-muted">—</span>}
                           </td>
 
+                          {/* Status */}
                           <td>
                             <span className={`om-status-pill om-status-${offer.status}`}>{offer.status}</span>
                           </td>
 
+                          {/* Actions */}
                           <td>
                             <div className="om-row-actions">
+                              {/* QR Button */}
+                              <button
+                                className="om-btn-qr"
+                                onClick={() => setQrModal({ offerTitle: offer.title, branches: offer.branches || [] })}
+                                disabled={loading}
+                                title="View & Print Branch QR Codes"
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <rect x="3" y="3" width="7" height="7" rx="1"/>
+                                  <rect x="14" y="3" width="7" height="7" rx="1"/>
+                                  <rect x="3" y="14" width="7" height="7" rx="1"/>
+                                  <rect x="14" y="14" width="3" height="3"/>
+                                  <rect x="18" y="14" width="3" height="3"/>
+                                  <rect x="14" y="18" width="3" height="3"/>
+                                  <rect x="18" y="18" width="3" height="3"/>
+                                </svg>
+                              </button>
+                              {/* Edit Button */}
                               <button className="om-btn-edit" onClick={() => handleEdit(offer)} disabled={loading} title="Edit">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                                 </svg>
                               </button>
+                              {/* Delete Button */}
                               <button className="om-btn-delete" onClick={() => handleDelete(offer.id)} disabled={loading} title="Delete">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <polyline points="3 6 5 6 21 6"/>
@@ -727,7 +841,11 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
                     <div className="om-page-btns">
                       <button className="om-page-btn" onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage===1}>‹</button>
                       {Array.from({ length: totalPages }, (_, i) => i+1).map(n => (
-                        <button key={n} className={`om-page-btn ${n === currentPage ? 'om-page-btn-active' : ''}`} onClick={() => setCurrentPage(n)}>{n}</button>
+                        <button
+                          key={n}
+                          className={`om-page-btn ${n === currentPage ? 'om-page-btn-active' : ''}`}
+                          onClick={() => setCurrentPage(n)}
+                        >{n}</button>
                       ))}
                       <button className="om-page-btn" onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage===totalPages}>›</button>
                     </div>
@@ -752,16 +870,19 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
               </div>
               <button className="om-modal-close" onClick={() => setMediaModal(null)}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
               </button>
             </div>
+
             <div className="om-modal-body">
               {mediaModal.files.length === 0 ? (
                 <div className="om-modal-empty">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="3" y="3" width="18" height="18" rx="2"/>
-                    <circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
                   </svg>
                   <p>No files remaining</p>
                 </div>
@@ -795,6 +916,7 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
                 </div>
               )}
             </div>
+
             <div className="om-modal-footer">
               <span>{mediaModal.files.length} {mediaModal.files.length === 1 ? 'file' : 'files'} total</span>
               <button className="om-modal-close-btn" onClick={() => setMediaModal(null)}>Close</button>
@@ -802,6 +924,82 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
           </div>
         </div>
       )}
+
+      {/* ── QR Modal ── */}
+      {qrModal && (
+        <div className="om-qr-overlay" onClick={() => setQrModal(null)}>
+          <div className="om-qr-modal" onClick={e => e.stopPropagation()}>
+
+            <div className="om-qr-modal-header">
+              <div>
+                <h3>Branch QR Codes</h3>
+                <p>{qrModal.offerTitle}</p>
+              </div>
+              <button className="om-modal-close" onClick={() => setQrModal(null)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+
+            <div className="om-qr-modal-body">
+              {qrModal.branches.length === 0 ? (
+                <div className="om-modal-empty">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="7" height="7" rx="1"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1"/>
+                  </svg>
+                  <p>No branches assigned to this offer.</p>
+                </div>
+              ) : (
+                <div className="om-qr-grid">
+                  {qrModal.branches.map(branch => (
+                    <div key={branch.id} className="om-qr-card">
+                      <div className="om-qr-card-header">
+                        <span className="om-qr-branch-name">🏪 {branch.branch_name}</span>
+                        <span className="om-qr-branch-code">{branch.branch_code}</span>
+                      </div>
+                      {branch.qr_code_url ? (
+                        <>
+                          <div className="om-qr-img-wrap">
+                            <img src={branch.qr_code_url} alt={`QR for ${branch.branch_name}`} />
+                          </div>
+                          <p className="om-qr-hint">📱 Customers scan to view offers</p>
+                          <div className="om-qr-card-actions">
+                            {branch.branch_offers_url && (
+                              <a className="om-qr-preview-link" href={branch.branch_offers_url} target="_blank" rel="noopener noreferrer">
+                                🔗 Preview
+                              </a>
+                            )}
+                            <button className="om-qr-print-btn" onClick={() => handlePrintQR(branch)}>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="6 9 6 2 18 2 18 9"/>
+                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                                <rect x="6" y="14" width="12" height="8"/>
+                              </svg>
+                              Print QR
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <p className="om-qr-not-ready">QR not generated yet</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="om-modal-footer">
+              <span>{qrModal.branches.length} {qrModal.branches.length === 1 ? 'branch' : 'branches'}</span>
+              <button className="om-modal-close-btn" onClick={() => setQrModal(null)}>Close</button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

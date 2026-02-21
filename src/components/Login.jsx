@@ -7,57 +7,72 @@ import "./Login.scss";
 function Login({ onAdminLogin = () => {}, onUserLogin = () => {} }) {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [formData, setFormData] = useState({ email: "", password: "" });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+
+  // Admin state
+  const [adminForm, setAdminForm] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (error) setError("");
-  };
+  // User OTP state
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpTimer, setOtpTimer] = useState(0);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // ─── Helpers ───────────────────────────────────────────────
 
   const safeParseResponse = async (response) => {
     const contentType = response.headers.get("content-type") || "";
     const text = await response.text();
-
     if (contentType.includes("application/json")) {
       try {
         return text ? JSON.parse(text) : {};
-      } catch (e) {
+      } catch {
         return { error: "Invalid JSON response from server.", _raw: text };
       }
     }
-
     return { error: "Non-JSON response from server.", _raw: text };
   };
 
-  const handleSubmit = async (e) => {
+  const startResendTimer = () => {
+    setOtpTimer(60);
+    const interval = setInterval(() => {
+      setOtpTimer((prev) => {
+        if (prev <= 1) { clearInterval(interval); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const switchTab = (toAdmin) => {
+    setIsAdmin(toAdmin);
+    setError("");
+    setOtpSent(false);
+    setPhone("");
+    setOtp("");
+    setAdminForm({ email: "", password: "" });
+  };
+
+  // ─── Admin Login ──────────────────────────────────────────
+
+  const handleAdminSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    if (!formData.email || !formData.password) {
-      setError("Please enter both email and password");
+    if (!adminForm.email || !adminForm.password) {
+      setError("Please enter both email and password.");
       setIsLoading(false);
       return;
     }
 
     try {
-      const endpoint = isAdmin
-        ? `${API_BASE_URL}/admin/login/`
-        : `${API_BASE_URL}/user/login/`;
-
-      const payload = {
-        email: formData.email,
-        password: formData.password,
-      };
-
-      const response = await fetch(endpoint, {
+      const response = await fetch(`${API_BASE_URL}/admin/login/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ email: adminForm.email, password: adminForm.password }),
       });
 
       const data = await safeParseResponse(response);
@@ -65,42 +80,114 @@ function Login({ onAdminLogin = () => {}, onUserLogin = () => {} }) {
       if (response.ok && data.access && data.refresh) {
         localStorage.setItem("access_token", data.access);
         localStorage.setItem("refresh_token", data.refresh);
-
         setAuthToken(data.access);
-
-        const userData = {
-          ...data.user,
-          is_admin: isAdmin,
-        };
-
+        const userData = { ...data.user, is_admin: true };
         localStorage.setItem("user", JSON.stringify(userData));
-
-        if (isAdmin) {
-          onAdminLogin(userData);
-          navigate("/admin-dashboard");
-        } else {
-          onUserLogin(userData);
-          navigate("/user-dashboard");
-        }
+        onAdminLogin(userData);
+        navigate("/admin-dashboard");
         return;
       }
 
       setError(data?.error || "Login failed. Please check your credentials.");
-
-      if (data?._raw) {
-        console.error("Raw server response:", data._raw);
-      }
+      if (data?._raw) console.error("Raw server response:", data._raw);
     } catch (err) {
-      console.error("Login error:", err);
-      setError("Request failed. Check backend URL/CORS/server logs.");
+      console.error("Admin login error:", err);
+      setError("Request failed. Check backend URL / CORS / server logs.");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ─── User: Step 1 — Send OTP ─────────────────────────────
+
+  const handleSendOtp = async (e) => {
+    e?.preventDefault();
+    setError("");
+
+    if (!phone.trim()) {
+      setError("Please enter your mobile number.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/user/send-otp/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone_number: phone.trim() }),
+      });
+
+      const data = await safeParseResponse(response);
+
+      if (response.ok) {
+        setOtpSent(true);
+        setOtp("");
+        startResendTimer();
+        // DEV ONLY — remove in production
+        if (data.otp) console.log("DEV OTP:", data.otp);
+      } else {
+        const msg =
+          data?.phone_number?.[0] || data?.error || "Failed to send OTP. Please try again.";
+        setError(msg);
+      }
+    } catch (err) {
+      console.error("Send OTP error:", err);
+      setError("Request failed. Check backend URL / CORS / server logs.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ─── User: Step 2 — Verify OTP ───────────────────────────
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!otp.trim() || otp.length !== 6) {
+      setError("Please enter the 6-digit OTP.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/user/verify-otp/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone_number: phone.trim(), otp: otp.trim() }),
+      });
+
+      const data = await safeParseResponse(response);
+
+      if (response.ok && data.access && data.refresh) {
+        localStorage.setItem("access_token", data.access);
+        localStorage.setItem("refresh_token", data.refresh);
+        setAuthToken(data.access);
+        const userData = { ...data.user, is_admin: false };
+        localStorage.setItem("user", JSON.stringify(userData));
+        onUserLogin(userData);
+        navigate("/user-dashboard");
+        return;
+      }
+
+      const msg =
+        data?.error || data?.non_field_errors?.[0] || "OTP verification failed. Please try again.";
+      setError(msg);
+    } catch (err) {
+      console.error("Verify OTP error:", err);
+      setError("Request failed. Check backend URL / CORS / server logs.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ─── Render ───────────────────────────────────────────────
+
   return (
     <div className="login-container">
       <div className="login-card">
+
+        {/* Left panel */}
         <div className="login-left">
           <div className="logo-section">
             <div className="logo-circles">
@@ -115,117 +202,174 @@ function Login({ onAdminLogin = () => {}, onUserLogin = () => {} }) {
           </div>
         </div>
 
+        {/* Right panel */}
         <div className="login-right">
           <div className="login-header">
             <h1>Sign In</h1>
             <p>Enter your credentials to continue</p>
           </div>
 
+          {/* Tab toggle */}
           <div className="login-type-toggle">
             <button
               type="button"
               className={!isAdmin ? "active" : ""}
-              onClick={() => setIsAdmin(false)}
+              onClick={() => switchTab(false)}
             >
               User Login
             </button>
             <button
               type="button"
               className={isAdmin ? "active" : ""}
-              onClick={() => setIsAdmin(true)}
+              onClick={() => switchTab(true)}
             >
               Admin Login
             </button>
           </div>
 
-          {error && (
-            <div
-              className="error-message"
-              style={{
-                background: "#fee",
-                color: "#c33",
-                padding: "12px",
-                borderRadius: "20px",
-                marginBottom: "20px",
-                fontSize: "14px",
-                border: "1px solid #fcc",
-              }}
-            >
-              {error}
-            </div>
+          {/* Error */}
+          {error && <div className="error-message">{error}</div>}
+
+          {/* ── ADMIN: email + password ── */}
+          {isAdmin && (
+            <form className="login-form" onSubmit={handleAdminSubmit}>
+              <div className="form-group">
+                <label htmlFor="email">Email Address</label>
+                <div className="input-wrapper">
+                  <span className="input-icon">👤</span>
+                  <input
+                    type="email"
+                    id="email"
+                    value={adminForm.email}
+                    onChange={(e) => setAdminForm((p) => ({ ...p, email: e.target.value }))}
+                    placeholder="Enter your email"
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="password">Password</label>
+                <div className="input-wrapper">
+                  <span className="input-icon">🔒</span>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    id="password"
+                    value={adminForm.password}
+                    onChange={(e) => setAdminForm((p) => ({ ...p, password: e.target.value }))}
+                    placeholder="Enter your password"
+                    required
+                    disabled={isLoading}
+                    style={{ paddingRight: "45px" }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="password-toggle"
+                    disabled={isLoading}
+                  >
+                    {showPassword ? "👁️" : "👁️‍🗨️"}
+                  </button>
+                </div>
+              </div>
+
+              <div className="form-options">
+                <label className="remember-me">
+                  <input type="checkbox" />
+                  <span>Remember me</span>
+                </label>
+                <a href="#" className="forgot-password">Forgot Password?</a>
+              </div>
+
+              <button type="submit" className="login-btn" disabled={isLoading}>
+                {isLoading ? "Signing In..." : "Get Started"}
+              </button>
+            </form>
           )}
 
-          <form className="login-form" onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="email">Email Address</label>
-              <div className="input-wrapper">
-                <span className="input-icon">👤</span>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="Enter your email"
-                  required
-                  disabled={isLoading}
-                />
+          {/* ── USER: phone + OTP ── */}
+          {!isAdmin && (
+            <form
+              className="login-form"
+              onSubmit={otpSent ? handleVerifyOtp : handleSendOtp}
+            >
+              {/* Step 1: Phone number */}
+              <div className="form-group">
+                <label htmlFor="phone">Mobile Number</label>
+                <div className="input-wrapper">
+                  <span className="input-icon">📱</span>
+                  <input
+                    type="tel"
+                    id="phone"
+                    value={phone}
+                    onChange={(e) => { setPhone(e.target.value); if (error) setError(""); }}
+                    placeholder="Enter your mobile number"
+                    required
+                    disabled={isLoading || otpSent}
+                  />
+                  {otpSent && (
+                    <button
+                      type="button"
+                      className="change-phone-btn"
+                      onClick={() => { setOtpSent(false); setOtp(""); setError(""); }}
+                    >
+                      Change
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
 
-            <div className="form-group">
-              <label htmlFor="password">Password</label>
-              <div className="input-wrapper">
-                <span className="input-icon">🔒</span>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  placeholder="Enter your password"
-                  required
-                  disabled={isLoading}
-                  style={{ paddingRight: "45px" }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: "absolute",
-                    right: "16px",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: "18px",
-                    padding: "5px",
-                  }}
-                  disabled={isLoading}
-                >
-                  {showPassword ? "👁️" : "👁️‍🗨️"}
-                </button>
-              </div>
-            </div>
+              {/* Step 2: OTP input (shown after send) */}
+              {otpSent && (
+                <div className="form-group">
+                  <label htmlFor="otp">Enter OTP</label>
+                  <div className="input-wrapper">
+                    <span className="input-icon">🔑</span>
+                    <input
+                      type="text"
+                      id="otp"
+                      value={otp}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+                        setOtp(val);
+                        if (error) setError("");
+                      }}
+                      placeholder="6-digit OTP"
+                      maxLength={6}
+                      inputMode="numeric"
+                      required
+                      disabled={isLoading}
+                      className="otp-input"
+                    />
+                  </div>
+                  <div className="otp-hint">
+                    {otpTimer > 0 ? (
+                      <span>Resend OTP in <strong>{otpTimer}s</strong></span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="resend-btn"
+                        onClick={handleSendOtp}
+                        disabled={isLoading}
+                      >
+                        Resend OTP
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
 
-            <div className="form-options">
-              <label className="remember-me">
-                <input type="checkbox" />
-                <span>Remember me</span>
-              </label>
-              <a href="#" className="forgot-password">
-                Forgot Password?
-              </a>
-            </div>
-
-            <button type="submit" className="login-btn" disabled={isLoading}>
-              {isLoading ? "Signing In..." : "Get Started"}
-            </button>
-          </form>
+              <button type="submit" className="login-btn" disabled={isLoading}>
+                {isLoading
+                  ? otpSent ? "Verifying..." : "Sending OTP..."
+                  : otpSent ? "Verify & Sign In" : "Send OTP"}
+              </button>
+            </form>
+          )}
 
           <div className="login-footer">
-            <p>
-              Don't have an account? <a href="#">Sign up</a>
-            </p>
+            <p>Don't have an account? <a href="#">Sign up</a></p>
           </div>
         </div>
       </div>
