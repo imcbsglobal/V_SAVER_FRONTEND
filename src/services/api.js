@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE = import.meta.env.VITE_API_BASE_URL || "http://192.168.1.45:8000/api";
+const BASE = import.meta.env.VITE_API_BASE_URL || "https://vsaverbackend.imcbs.com/api";
  
 
 
