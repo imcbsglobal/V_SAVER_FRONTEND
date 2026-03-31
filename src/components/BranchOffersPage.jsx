@@ -1,10 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
 import './BranchOffersPage.scss';
 import vmartLogo from '../assets/VMART.jpg';
-
-const API_BASE = 'http://192.168.1.45:8000/api';
+import { PUBLIC_API } from '../services/api';
 
 // ── Icons ─────────────────────────────────────────────────────────────
 const CalendarIcon = ({ size = 12 }) => (
@@ -57,6 +55,12 @@ const ClockIcon = ({ size = 10 }) => (
   </svg>
 );
 
+const CheckIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+);
+
 // ── Helpers ───────────────────────────────────────────────────────────
 const formatDate = (d) => {
   if (!d) return '';
@@ -71,11 +75,28 @@ const formatTime = (t) => {
   return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
 };
 
+// ── Toast ─────────────────────────────────────────────────────────────
+function Toast({ message, visible }) {
+  return (
+    <div className={`bop-toast ${visible ? 'bop-toast--visible' : ''}`}>
+      <CheckIcon /> {message}
+    </div>
+  );
+}
+
 // ── Popup Modal ───────────────────────────────────────────────────────
 function OfferModal({ offer, onClose }) {
   const images = offer.media_files?.filter(m => m.media_type === 'image') || [];
   const [idx, setIdx] = useState(0);
+  const [toast, setToast] = useState({ visible: false, message: '' });
   const scrollRef = useRef(null);
+  const toastTimer = useRef(null);
+
+  const showToast = (message) => {
+    clearTimeout(toastTimer.current);
+    setToast({ visible: true, message });
+    toastTimer.current = setTimeout(() => setToast({ visible: false, message: '' }), 2500);
+  };
 
   const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
@@ -100,19 +121,45 @@ function OfferModal({ offer, onClose }) {
     return () => window.removeEventListener('keydown', handler);
   }, [idx, images.length, scrollTo, onClose]);
 
+  // Cleanup toast timer on unmount
+  useEffect(() => () => clearTimeout(toastTimer.current), []);
+
   const currentImage = images[idx] || null;
   const hasHourly = offer.offer_start_time && offer.offer_end_time;
 
+  // ── Share handler ─────────────────────────────────────────────────
   const handleShare = async () => {
-    if (navigator.share && currentImage) {
-      try { await navigator.share({ title: offer.title, url: currentImage.file_url }); } catch (_) {}
-    } else if (currentImage) {
-      navigator.clipboard?.writeText(currentImage.file_url);
+    const shareUrl = window.location.href;
+    const shareData = {
+      title: offer.title || 'Check out this offer!',
+      text: offer.description
+        ? `${offer.title} — ${offer.description}`
+        : `Check out this offer: ${offer.title}`,
+      url: shareUrl,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      showToast('Link copied to clipboard!');
+    } catch {
+      window.prompt('Copy this link:', shareUrl);
     }
   };
 
   return (
     <div className="bop-modal-overlay">
+
+      {/* ── Toast notification ── */}
+      <Toast message={toast.message} visible={toast.visible} />
 
       {/* ── Top bar ── */}
       <div className="bop-modal-topbar">
@@ -161,7 +208,6 @@ function OfferModal({ offer, onClose }) {
               <CalendarIcon size={12} />
               {formatDate(offer.valid_from)} &middot; {formatDate(offer.valid_to)}
             </div>
-            {/* FIX 4: hourly time window in modal */}
             {hasHourly && (
               <div className="bop-bottom-hourly">
                 <ClockIcon size={11} />
@@ -202,7 +248,7 @@ function BranchOffersPage() {
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
-    axios.get(`${API_BASE}/public/branch/${branchId}/offers/`)
+    PUBLIC_API.get(`/public/branch/${branchId}/offers/`)
       .then(res => {
         setOffers(res.data.active_offers || []);
         setBranch(res.data || null);
@@ -342,7 +388,6 @@ function BranchOffersPage() {
                           Until {formatDate(offer.valid_to)}
                         </div>
 
-                        {/* FIX 3: Hourly badge on card thumb */}
                         {hasHourly && (
                           <div className="bop-thumb-hourly">
                             <ClockIcon size={9} />
@@ -357,7 +402,6 @@ function BranchOffersPage() {
                         )}
                       </div>
 
-                      {/* FIX 2 & 6: Always-present footer with CTA */}
                       <div className="bop-card-footer">
                         {offer.description && (
                           <div className="bop-card-subdesc">{offer.description}</div>

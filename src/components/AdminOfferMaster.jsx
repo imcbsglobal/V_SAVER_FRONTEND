@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import AdminSidebar from './Adminsidebar';
 import './AdminOfferMaster.scss';
-import { API_BASE_URL } from '../services/config';
+import API from '../services/api';
 
 const ROWS_PER_PAGE = 8;
 
@@ -75,38 +75,28 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   const handleToggleSidebar = () => setIsSidebarOpen(p => !p);
-  const getAuthToken = () => localStorage.getItem('access_token');
-  const getHeaders   = () => ({
-    'Authorization': `Bearer ${getAuthToken()}`,
-    'Content-Type': 'application/json'
-  });
 
   // ── API ───────────────────────────────────────────────────────────────────
 
   const fetchStats = async () => {
     try {
-      const r = await fetch(`${API_BASE_URL}/offer-master/stats/`, { headers: getHeaders() });
-      if (!r.ok) throw new Error('Failed to fetch stats');
-      const d = await r.json();
+      const { data } = await API.get(`/offer-master/stats/`);
       setStats({
-        total:     d.total     || 0,
-        active:    d.active    || 0,
-        inactive:  d.inactive  || 0,
-        scheduled: d.scheduled || 0,
+        total:     data.total     || 0,
+        active:    data.active    || 0,
+        inactive:  data.inactive  || 0,
+        scheduled: data.scheduled || 0,
       });
     } catch (err) {
       console.error('Stats fetch failed:', err);
     }
   };
 
-  // fetchBranches: backend returns { success, branches: [{id, branch_name, branch_code, shop_name, ...}] }
   const fetchBranches = async () => {
     try {
-      const r = await fetch(`${API_BASE_URL}/branches/dropdown/`, { headers: getHeaders() });
-      if (!r.ok) throw new Error('Failed to fetch branches');
-      const d = await r.json();
-      if (d.success && Array.isArray(d.branches)) {
-        setBranches(d.branches);
+      const { data } = await API.get(`/branches/dropdown/`);
+      if (data.success && Array.isArray(data.branches)) {
+        setBranches(data.branches);
       } else {
         setBranches([]);
       }
@@ -119,14 +109,13 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
   const fetchOffers = async () => {
     setLoading(true); setError(null);
     try {
-      const r = await fetch(`${API_BASE_URL}/offer-master/`, { headers: getHeaders() });
-      if (!r.ok) {
-        if (r.status === 401) throw new Error('Session expired. Please login again.');
-        throw new Error('Failed to fetch offers');
-      }
-      setOffers(await r.json());
+      const { data } = await API.get(`/offer-master/`);
+      setOffers(data);
     } catch (err) {
-      setError(err.message || 'Failed to load offers');
+      const msg = err?.response?.status === 401
+        ? 'Session expired. Please login again.'
+        : err?.response?.data?.error || 'Failed to load offers';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -189,16 +178,13 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
     if (!window.confirm('Delete this file?')) return;
     setLoading(true);
     try {
-      const r = await fetch(`${API_BASE_URL}/offer-master/${offerId}/media/${mediaId}/`, {
-        method: 'DELETE', headers: getHeaders()
-      });
-      if (!r.ok) throw new Error('Failed to delete media file');
+      await API.delete(`/offer-master/${offerId}/media/${mediaId}/`);
       setSuccessMessage('File deleted successfully!');
       if (mediaModal?.offerId === offerId)
         setMediaModal(p => ({ ...p, files: p.files.filter(f => f.id !== mediaId) }));
       await fetchOffers();
     } catch (err) {
-      setError(err.message);
+      setError(err?.response?.data?.error || 'Failed to delete media file');
     } finally { setLoading(false); }
   };
 
@@ -235,19 +221,11 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
       selectedBranches.forEach(id => fd.append('branch_ids', id));
       formData.files.forEach(f => fd.append('files', f));
 
-      const url    = isEditing ? `${API_BASE_URL}/offer-master/${editingId}/` : `${API_BASE_URL}/offer-master/`;
-      const method = isEditing ? 'PATCH' : 'POST';
-      const r = await fetch(url, {
-        method,
-        headers: { 'Authorization': `Bearer ${getAuthToken()}` },
-        body: fd
+      const url    = isEditing ? `/offer-master/${editingId}/` : `/offer-master/`;
+      const method = isEditing ? 'patch' : 'post';
+      await API[method](url, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
-
-      if (!r.ok) {
-        const d = await r.json();
-        const msg = d.error || d.detail || Object.values(d)?.[0]?.[0] || 'Failed to save offer';
-        throw new Error(msg);
-      }
 
       setSuccessMessage(isEditing ? 'Offer updated!' : 'Offer created!');
       setFormData({ title:'', description:'', validFrom:'', validTo:'', status:'active', files:[], offerStartTime:'', offerEndTime:'', isHourlyOffer:false });
@@ -258,7 +236,8 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
       await fetchOffers();
       fetchStats();
     } catch (err) {
-      setError(err.message);
+      const d = err?.response?.data;
+      setError(d?.error || d?.detail || Object.values(d || {})?.[0]?.[0] || 'Failed to save offer');
     } finally {
       setLoading(false);
     }
@@ -297,13 +276,12 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
     if (!window.confirm('Delete this offer and all its files?')) return;
     setLoading(true);
     try {
-      const r = await fetch(`${API_BASE_URL}/offer-master/${id}/`, { method:'DELETE', headers: getHeaders() });
-      if (!r.ok) throw new Error('Failed to delete offer');
+      await API.delete(`/offer-master/${id}/`);
       setSuccessMessage('Offer deleted!');
       await fetchOffers();
       fetchStats();
     } catch (err) {
-      setError(err.message);
+      setError(err?.response?.data?.error || 'Failed to delete offer');
     } finally {
       setLoading(false);
     }

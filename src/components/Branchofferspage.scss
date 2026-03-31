@@ -741,3 +741,33 @@ $green:       #22c55e;
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 @keyframes swipeHint { 0% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes bounceUp { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+// ── Toast Notification ──────────────────────────────────────
+.bop-toast {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: $dark;
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px 20px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 20px rgba($dark, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  z-index: 2000;
+  white-space: nowrap;
+
+  svg { color: $green; flex-shrink: 0; }
+
+  &--visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}

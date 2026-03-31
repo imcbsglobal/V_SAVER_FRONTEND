@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import './OfferMaster.scss';
-import { API_BASE_URL } from '../services/config';
+import API from '../services/api';
 
 const OfferMaster = ({ onLogout, userData }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -14,26 +14,11 @@ const OfferMaster = ({ onLogout, userData }) => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [viewMode, setViewMode] = useState('branches'); // 'branches', 'offers', or 'all-offers'
 
-  // Get auth token from localStorage
-  const getAuthToken = () => {
-    return localStorage.getItem('access_token');
-  };
-
-  // API Headers with authentication
-  const getHeaders = () => {
-    return {
-      'Authorization': `Bearer ${getAuthToken()}`,
-      'Content-Type': 'application/json'
-    };
-  };
-
-  // ✅ FIXED: Fetch ALL branches from ALL users on component mount
   useEffect(() => {
-    fetchAllPublicBranches(); // Changed from fetchUserBranches
+    fetchAllPublicBranches();
     fetchAllOffersFromPublic();
   }, []);
 
-  // Auto-clear error messages after 5 seconds
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => {
@@ -43,127 +28,83 @@ const OfferMaster = ({ onLogout, userData }) => {
     }
   }, [error]);
 
-  // ✅ NEW: Fetch ALL branches from ALL users (public endpoint)
   const fetchAllPublicBranches = async () => {
     setLoading(true);
     setError(null);
-    
     try {
-      // Use public endpoint - no authentication required
-      const response = await fetch(`${API_BASE_URL}/public/branches/`);
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch branches');
-      }
-
-      const data = await response.json();
-      
+      const { data } = await API.get(`/public/branches/`);
       if (data.success && data.branches) {
         setBranches(data.branches);
-        
-        // Auto-select first branch if available
         if (data.branches.length > 0) {
           handleBranchSelect(data.branches[0]);
         } else {
           setViewMode('all-offers');
-          // If no branches, just show all offers view
         }
       }
     } catch (err) {
       console.error('Error fetching branches:', err);
-      setError(err.message || 'Failed to load branches');
-      // Even if branches fail, try to show offers
+      setError(err?.response?.data?.error || err.message || 'Failed to load branches');
       setViewMode('all-offers');
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Fetch ALL offers from ALL shops using public endpoint (background load)
   const fetchAllOffersFromPublic = async () => {
     try {
-      // Use the public endpoint to get ALL offers from ALL users/shops
-      const response = await fetch(`${API_BASE_URL}/public/offers/`);
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.offers) {
-          setAllOffers(data.offers);
-        }
+      const { data } = await API.get(`/public/offers/`);
+      if (data.success && data.offers) {
+        setAllOffers(data.offers);
       }
     } catch (err) {
       console.error('Error fetching public offers:', err);
-      // Don't show error for background load
     }
   };
 
-  // ✅ Fetch ALL offers from ALL shops using public endpoint
   const fetchAllOffers = async () => {
     setLoading(true);
     setError(null);
-    
     try {
-      // Use the public endpoint to get ALL offers from ALL users/shops
-      const response = await fetch(`${API_BASE_URL}/public/offers/`);
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch all offers');
-      }
-
-      const data = await response.json();
-      
+      const { data } = await API.get(`/public/offers/`);
       if (data.success && data.offers) {
         setAllOffers(data.offers);
         setViewMode('all-offers');
       }
     } catch (err) {
       console.error('Error fetching all offers:', err);
-      setError(err.message || 'Failed to load all offers');
+      setError(err?.response?.data?.error || err.message || 'Failed to load all offers');
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ UPDATED: Fetch offers for selected branch using PUBLIC endpoint
   const fetchBranchOffers = async (branch) => {
     setLoading(true);
     setError(null);
-    
     try {
-      // Use public offers endpoint with branch_id filter
-      const response = await fetch(`${API_BASE_URL}/public/offers/?branch_id=${branch.id}`);
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch offers');
-      }
-
-      const data = await response.json();
-      
+      const { data } = await API.get(`/public/offers/?branch_id=${branch.id}`);
       if (data.success) {
         setOffers(data.offers || []);
       }
     } catch (err) {
       console.error('Error fetching offers:', err);
-      setError(err.message || 'Failed to load offers');
+      setError(err?.response?.data?.error || err.message || 'Failed to load offers');
       setOffers([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle branch selection
   const handleBranchSelect = async (branch) => {
     setSelectedBranch(branch);
     setViewMode('offers');
     await fetchBranchOffers(branch);
   };
 
-  // Handle "View All Offers" button
   const handleViewAllOffers = () => {
     fetchAllOffers();
   };
 
-  // Go back to branch selection
   const handleBackToBranches = () => {
     setViewMode('branches');
     setSelectedBranch(null);
@@ -175,8 +116,11 @@ const OfferMaster = ({ onLogout, userData }) => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  // ✅ FIXED: was removing 'user_data' (wrong key) and missing refresh_token
   const handleLogout = () => {
     localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
     localStorage.removeItem('user_data');
     if (onLogout) onLogout();
   };
@@ -191,7 +135,6 @@ const OfferMaster = ({ onLogout, userData }) => {
     });
   };
 
-  // Filter offers based on status
   const getFilteredOffers = (offersList) => {
     return offersList.filter(offer => {
       if (filterStatus === 'all') return true;
@@ -202,34 +145,24 @@ const OfferMaster = ({ onLogout, userData }) => {
   const filteredOffers = getFilteredOffers(offers);
   const filteredAllOffers = getFilteredOffers(allOffers);
 
-  // Check offer validity status
   const getOfferStatus = (offer) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
     const validFrom = new Date(offer.valid_from);
     validFrom.setHours(0, 0, 0, 0);
-    
     const validTo = new Date(offer.valid_to);
     validTo.setHours(23, 59, 59, 999);
-    
-    if (today < validFrom) {
-      return 'upcoming';
-    } else if (today > validTo) {
-      return 'expired';
-    } else {
-      return 'active';
-    }
+    if (today < validFrom) return 'upcoming';
+    else if (today > validTo) return 'expired';
+    else return 'active';
   };
 
   const isOfferValid = (offer) => {
     return getOfferStatus(offer) === 'active';
   };
 
-  // Render offer card (reusable component)
   const renderOfferCard = (offer, showBranchContext = false) => (
     <div key={offer.id} className={`offer-card ${isOfferValid(offer) ? 'valid-offer' : 'expired-offer'}`}>
-      {/* Validity Badge */}
       {(() => {
         const status = getOfferStatus(offer);
         if (status === 'active') {
@@ -256,7 +189,6 @@ const OfferMaster = ({ onLogout, userData }) => {
         return null;
       })()}
 
-      {/* Media Files */}
       {offer.media_files && offer.media_files.length > 0 && (
         <div className="offer-media-list">
           {offer.media_files.map((media) => (
@@ -293,7 +225,6 @@ const OfferMaster = ({ onLogout, userData }) => {
         </div>
       )}
       
-      {/* Offer Content */}
       <div className="offer-content">
         <div className="offer-header">
           <h3>{offer.title}</h3>
@@ -323,18 +254,13 @@ const OfferMaster = ({ onLogout, userData }) => {
             <strong>📍 Status:</strong> 
             {(() => {
               const status = getOfferStatus(offer);
-              if (status === 'active') {
-                return ' ✅ Active Now';
-              } else if (status === 'upcoming') {
-                return ' 🕒 Starts Soon';
-              } else {
-                return ' ❌ Expired';
-              }
+              if (status === 'active') return ' ✅ Active Now';
+              else if (status === 'upcoming') return ' 🕒 Starts Soon';
+              else return ' ❌ Expired';
             })()}
           </div>
         </div>
         
-        {/* Show all assigned branches */}
         {offer.branches && offer.branches.length > 0 && (
           <div className="offer-all-branches-info" style={{
             backgroundColor: '#f0f9ff',
@@ -351,11 +277,7 @@ const OfferMaster = ({ onLogout, userData }) => {
             }}>
               📍 Valid at {offer.branch_count} branch{offer.branch_count > 1 ? 'es' : ''}:
             </h4>
-            <div style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '8px'
-            }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
               {offer.branches.slice(0, 5).map(branch => (
                 <span 
                   key={branch.id} 
@@ -394,7 +316,6 @@ const OfferMaster = ({ onLogout, userData }) => {
           </div>
         )}
 
-        {/* INFO MESSAGE */}
         <div className="info-message">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10" />
@@ -418,7 +339,6 @@ const OfferMaster = ({ onLogout, userData }) => {
       
       <main className={`main-content ${!isSidebarOpen ? 'sidebar-closed' : ''}`}>
         <div className="content-wrapper">
-          {/* Header */}
           <div className="page-header">
             <div className="header-content">
               {(viewMode === 'offers' || viewMode === 'all-offers') && (
@@ -442,7 +362,6 @@ const OfferMaster = ({ onLogout, userData }) => {
               )}
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="error-banner">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -458,7 +377,6 @@ const OfferMaster = ({ onLogout, userData }) => {
           {/* Branch Selection View */}
           {viewMode === 'branches' && (
             <>
-              {/* View All Offers Button */}
               {branches.length > 0 && (
                 <div className="view-options" style={{
                   marginBottom: '20px',
@@ -523,7 +441,6 @@ const OfferMaster = ({ onLogout, userData }) => {
                       <div className="branch-info">
                         <h3>{branch.branch_name}</h3>
                         <p className="branch-code">Code: {branch.branch_code}</p>
-                        {/* ✅ NEW: Show shop owner info */}
                         {branch.user_info && branch.user_info.shop_name && (
                           <p className="shop-owner" style={{
                             fontSize: '13px',
@@ -541,7 +458,6 @@ const OfferMaster = ({ onLogout, userData }) => {
                           </svg>
                           {branch.location}
                         </p>
-                        {/* ✅ NEW: Show offer count if available */}
                         {branch.active_offers_count > 0 && (
                           <p className="offers-count" style={{
                             fontSize: '13px',

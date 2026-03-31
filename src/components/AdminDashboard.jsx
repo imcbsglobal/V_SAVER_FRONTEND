@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { API_BASE_URL } from "../services/config";
+import API from "../services/api";
 import AdminSidebar from "./Adminsidebar";
 import "./AdminDashboard.scss";
 
@@ -71,7 +70,7 @@ const resolveDisplayName = (user) => {
 
 
 
-const DEBTOR_API = `${API_BASE_URL}/debtors/`;
+const DEBTOR_API = `/debtors/`;
 
 /* ════════════════════════════════════════════════════════════════ */
 const AdminDashboard = ({ onLogout, userData }) => {
@@ -127,11 +126,6 @@ const AdminDashboard = ({ onLogout, userData }) => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const getAuthHeaders = () => ({
-    Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-    "Content-Type": "application/json",
-  });
-
   /* ─── Debtor search (live) ─── */
   const searchDebtors = async (query) => {
     if (!query || query.length < 2) {
@@ -141,8 +135,7 @@ const AdminDashboard = ({ onLogout, userData }) => {
     }
     setDebtorLoading(true);
     try {
-      const url = `${DEBTOR_API}?search=${encodeURIComponent(query)}&page_size=15`;
-      const res = await axios.get(url);
+      const res = await API.get(`${DEBTOR_API}?search=${encodeURIComponent(query)}&page_size=15`);
       const results = res.data?.results || [];
       setDebtorSuggestions(results);
       setShowSuggestions(true);
@@ -182,7 +175,7 @@ const AdminDashboard = ({ onLogout, userData }) => {
   /* ─── API calls ─── */
   const fetchStats = async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/admins/stats/`, { headers: getAuthHeaders() });
+      const res = await API.get(`/admins/stats/`);
       setStats(res.data);
     } catch {}
   };
@@ -190,7 +183,7 @@ const AdminDashboard = ({ onLogout, userData }) => {
   const fetchAdmins = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE_URL}/admins/`, { headers: getAuthHeaders() });
+      const res = await API.get(`/admins/`);
       setAdmins(res.data);
       // fallback stats
       setStats({
@@ -211,7 +204,7 @@ const AdminDashboard = ({ onLogout, userData }) => {
       return;
     }
     try {
-      await axios.post(`${API_BASE_URL}/admins/`, newAdmin, { headers: getAuthHeaders() });
+      await API.post(`/admins/`, newAdmin);
       fetchAdmins(); fetchStats();
       setShowAddForm(false);
       resetNewAdmin();
@@ -231,7 +224,7 @@ const AdminDashboard = ({ onLogout, userData }) => {
     try {
       const payload = { ...editingUser };
       if (!payload.password) delete payload.password;
-      await axios.patch(`${API_BASE_URL}/admins/${editingUser.id}/`, payload, { headers: getAuthHeaders() });
+      await API.patch(`/admins/${editingUser.id}/`, payload);
       fetchAdmins(); fetchStats();
       setShowEditForm(false);
       setEditingUser(null);
@@ -244,7 +237,7 @@ const AdminDashboard = ({ onLogout, userData }) => {
   const deleteAdmin = async (id) => {
     if (!window.confirm("Delete this user?")) return;
     try {
-      await axios.delete(`${API_BASE_URL}/admins/${id}/`, { headers: getAuthHeaders() });
+      await API.delete(`/admins/${id}/`);
       fetchAdmins(); fetchStats();
     } catch {
       alert("❌ Failed to delete user");

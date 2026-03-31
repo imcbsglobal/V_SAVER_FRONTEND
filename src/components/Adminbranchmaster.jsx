@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from './Adminsidebar';
 import './AdminBranchMaster.scss';
-import { API_BASE_URL } from '../services/config';
+import API from '../services/api';
 
 const ROWS_PER_PAGE = 8;
 
@@ -11,7 +11,7 @@ const AdminBranchMaster = ({ onLogout, userData }) => {
   const [branches, setBranches] = useState([]);
   const [miselShops, setMiselShops] = useState([]);
   const [miselLoading, setMiselLoading] = useState(false);
-  const [djangoUsers, setDjangoUsers] = useState([]); // ✅ FIX: Django user list for ID resolution
+  const [djangoUsers, setDjangoUsers] = useState([]);
   const [userSearch, setUserSearch] = useState('');
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [formData, setFormData] = useState({
@@ -30,8 +30,6 @@ const AdminBranchMaster = ({ onLogout, userData }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
-
-
   useEffect(() => {
     if (userData && userData.username) {
       setAdminName(userData.username);
@@ -42,49 +40,40 @@ const AdminBranchMaster = ({ onLogout, userData }) => {
         setAdminName(parsedUser.username || parsedUser.email || 'Admin');
       }
     }
-    // Load data immediately for instant display
+
     fetchBranches();
     fetchMiselShops();
-    fetchDjangoUsers(); // ✅ FIX: load Django users for proper ID resolution
-    // Silently sync Misel shops → then auto-create any missing branches in background
-    const token = localStorage.getItem('access_token');
+    fetchDjangoUsers();
+
     const autoCreateBranches = async () => {
       try {
         // 1. Sync Misel users into Django first
-        await fetch(`${API_BASE_URL}/misel-sync/`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        });
+        await API.post('/misel-sync/');
 
         // 2. Fetch latest Misel shops
-        const miselRes = await fetch(`${API_BASE_URL}/misel/`, { headers: getHeaders() });
-        if (!miselRes.ok) return;
-        const miselData = await miselRes.json();
-        const shops = Array.isArray(miselData) ? miselData : (miselData.results || []);
+        const miselRes = await API.get('/misel/');
+        const shops = Array.isArray(miselRes.data)
+          ? miselRes.data
+          : (miselRes.data.results || []);
 
         // 3. Fetch latest branches from Django
-        const branchRes = await fetch(`${API_BASE_URL}/branch-master/`, {
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        });
-        if (!branchRes.ok) return;
-        const existingBranches = await branchRes.json();
+        const branchRes = await API.get('/branch-master/');
+        const existingBranches = branchRes.data;
         const existingCodes = new Set(existingBranches.map(b => String(b.branch_code)));
 
-        // 4. Create a branch for every shop that doesn't have one yet
-        let anyCreated = false;
+        // 4. Fetch Django users for proper ID resolution
+        const usersRes = await API.get('/users/dropdown/');
+        const djangoUsersList = Array.isArray(usersRes.data)
+          ? usersRes.data
+          : (usersRes.data.results || []);
 
-        // Fetch Django users for proper ID resolution
-        const usersRes = await fetch(`${API_BASE_URL}/users/dropdown/`, {
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        });
-        const usersData = usersRes.ok ? await usersRes.json() : [];
-        const djangoUsersList = Array.isArray(usersData) ? usersData : (usersData.results || []);
+        // 5. Create a branch for every shop that doesn't have one yet
+        let anyCreated = false;
 
         for (const shop of shops) {
           const branchCode = shop.client_id ? String(shop.client_id) : String(shop.id);
           if (existingCodes.has(branchCode)) continue;
 
-          // Resolve Django user PK — never use raw shop.id as the user FK
           const djangoUser =
             djangoUsersList.find(u => u.username === (shop.client_id ? `misel_${shop.client_id}` : `misel_${shop.id}`)) ||
             djangoUsersList.find(u => u.shop_name === shop.firm_name);
@@ -102,40 +91,29 @@ const AdminBranchMaster = ({ onLogout, userData }) => {
           payload.append('address', shop.address1 || '');
           payload.append('status', 'active');
 
-          const res = await fetch(`${API_BASE_URL}/branch-master/`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
-            body: payload,
-          });
-          if (res.ok) {
+          try {
+            await API.post('/branch-master/', payload);
             existingCodes.add(branchCode);
             anyCreated = true;
+          } catch (err) {
+            console.warn(`Failed to auto-create branch for ${shop.firm_name}:`, err);
           }
         }
 
-        // 5. If new branches were created, refresh the table silently
+        // 6. If new branches were created, refresh the table silently
         if (anyCreated) {
-          const refreshRes = await fetch(`${API_BASE_URL}/branch-master/`, {
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          });
-          if (refreshRes.ok) {
-            const updated = await refreshRes.json();
-            setBranches(updated);
-          }
+          const refreshRes = await API.get('/branch-master/');
+          setBranches(refreshRes.data);
         }
       } catch (err) {
         console.error('Background branch auto-sync failed:', err);
       }
     };
+
     autoCreateBranches();
   }, [userData]);
 
   const handleToggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-  const getAuthToken = () => localStorage.getItem('access_token');
-  const getHeaders = () => ({
-    'Authorization': `Bearer ${getAuthToken()}`,
-    'Content-Type': 'application/json'
-  });
 
   useEffect(() => {
     if (error || successMessage) {
@@ -144,15 +122,11 @@ const AdminBranchMaster = ({ onLogout, userData }) => {
     }
   }, [error, successMessage]);
 
-  // ── FIX 1: Misel API returns plain array [], not { results: [] } ──
   const fetchMiselShops = async () => {
     setMiselLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/misel/`, { headers: getHeaders() });
-
-      if (!response.ok) { console.error('Failed to fetch Misel shops'); return; }
-      const data = await response.json();
-      setMiselShops(Array.isArray(data) ? data : (data.results || []));
+      const res = await API.get('/misel/');
+      setMiselShops(Array.isArray(res.data) ? res.data : (res.data.results || []));
     } catch (err) {
       console.error('Error fetching Misel shops:', err);
     } finally {
@@ -160,16 +134,10 @@ const AdminBranchMaster = ({ onLogout, userData }) => {
     }
   };
 
-  // ✅ FIX: Fetch actual Django users so we can resolve real Django PKs
   const fetchDjangoUsers = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_BASE_URL}/users/dropdown/`, {
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-      });
-      if (!response.ok) return;
-      const data = await response.json();
-      setDjangoUsers(Array.isArray(data) ? data : (data.results || []));
+      const res = await API.get('/users/dropdown/');
+      setDjangoUsers(Array.isArray(res.data) ? res.data : (res.data.results || []));
     } catch (err) {
       console.error('Error fetching Django users:', err);
     }
@@ -179,22 +147,19 @@ const AdminBranchMaster = ({ onLogout, userData }) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/branch-master/`, { headers: getHeaders() });
-      if (!response.ok) {
-        if (response.status === 401) throw new Error('Session expired. Please login again.');
-        throw new Error('Failed to fetch branches');
-      }
-      const data = await response.json();
-      setBranches(data);
+      const res = await API.get('/branch-master/');
+      setBranches(res.data);
     } catch (err) {
       console.error('Error fetching branches:', err);
-      setError(err.message || 'Failed to load branches');
+      if (err.response?.status === 401) {
+        setError('Session expired. Please login again.');
+      } else {
+        setError(err.response?.data?.detail || 'Failed to load branches');
+      }
     } finally {
       setLoading(false);
     }
   };
-
-
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -215,25 +180,10 @@ const AdminBranchMaster = ({ onLogout, userData }) => {
       formDataToSend.append('address', formData.address);
       formDataToSend.append('status', formData.status);
 
-      const url = isEditing
-        ? `${API_BASE_URL}/branch-master/${editingId}/`
-        : `${API_BASE_URL}/branch-master/`;
-      const method = isEditing ? 'PATCH' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Authorization': `Bearer ${getAuthToken()}` },
-        body: formDataToSend
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        const msg =
-          errorData.error ||
-          errorData.detail ||
-          Object.entries(errorData).map(([k, v]) => `${k}: ${Array.isArray(v) ? v[0] : v}`).join(', ') ||
-          'Failed to save branch';
-        throw new Error(msg);
+      if (isEditing) {
+        await API.patch(`/branch-master/${editingId}/`, formDataToSend);
+      } else {
+        await API.post('/branch-master/', formDataToSend);
       }
 
       setSuccessMessage(isEditing ? 'Branch updated successfully!' : 'Branch created successfully!');
@@ -241,7 +191,13 @@ const AdminBranchMaster = ({ onLogout, userData }) => {
       await fetchBranches();
     } catch (err) {
       console.error('Error saving branch:', err);
-      setError(err.message || 'Failed to save branch');
+      const errData = err.response?.data;
+      const msg = errData
+        ? (errData.error ||
+           errData.detail ||
+           Object.entries(errData).map(([k, v]) => `${k}: ${Array.isArray(v) ? v[0] : v}`).join(', '))
+        : 'Failed to save branch';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -282,16 +238,12 @@ const AdminBranchMaster = ({ onLogout, userData }) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/branch-master/${branchId}/`, {
-        method: 'DELETE',
-        headers: getHeaders()
-      });
-      if (!response.ok) throw new Error('Failed to delete branch');
+      await API.delete(`/branch-master/${branchId}/`);
       setSuccessMessage('Branch deleted successfully!');
       await fetchBranches();
     } catch (err) {
       console.error('Error deleting branch:', err);
-      setError(err.message || 'Failed to delete branch');
+      setError(err.response?.data?.detail || 'Failed to delete branch');
     } finally {
       setLoading(false);
     }
@@ -327,30 +279,21 @@ const AdminBranchMaster = ({ onLogout, userData }) => {
   };
 
   // ── Resolve the actual Django User PK for a given Misel shop ──
-  // Username convention mirrors the backend sync:
-  //   • client_id present  → "misel_{client_id}"   e.g. "misel_CLIENT001"
-  //   • client_id absent   → "misel_{id}"           e.g. "misel_1"  (fallback)
   const resolveUserId = (shop) => {
     const clientId = (shop.client_id || '').trim();
-    const expectedUsername = clientId
-      ? `misel_${clientId}`
-      : `misel_${shop.id}`;
+    const expectedUsername = clientId ? `misel_${clientId}` : `misel_${shop.id}`;
 
-    // 1. Match by derived username — most reliable
     const byUsername = djangoUsers.find(u => u.username === expectedUsername);
     if (byUsername?.id) return byUsername.id;
 
-    // 2. Fallback: match by shop_name (business_name stored on User)
     const byShopName = djangoUsers.find(
       u => u.shop_name && u.shop_name === shop.firm_name
     );
     if (byShopName?.id) return byShopName.id;
 
-    // 3. Already-linked branch
     const linked = branches.find(b => b.user_info?.shop_name === shop.firm_name);
     if (linked?.user_info?.id) return linked.user_info.id;
 
-    // 4. Cannot resolve — return null so we show "sync needed" warning
     return null;
   };
 
@@ -480,7 +423,6 @@ const AdminBranchMaster = ({ onLogout, userData }) => {
                                   alert(`Cannot find a Django user for "${shop.firm_name}". Please run Misel Sync first so the user is created in the system.`);
                                   return;
                                 }
-                                // ── use firm_name for branch_name, correct user ID ──
                                 setFormData(prev => ({
                                   ...prev,
                                   user:        resolvedUserId,
@@ -649,11 +591,11 @@ const AdminBranchMaster = ({ onLogout, userData }) => {
                               {branch.branch_image_url
                                 ? <img className="branch-thumb" src={branch.branch_image_url} alt={branch.branch_name}/>
                                 : <div className="branch-thumb-placeholder">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                      <polyline points="9 22 9 12 15 12 15 22"/>
-                    </svg>
-                  </div>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                      <polyline points="9 22 9 12 15 12 15 22"/>
+                                    </svg>
+                                  </div>
                               }
                               <div>
                                 <div className="branch-cell-name">{branch.branch_name}</div>
