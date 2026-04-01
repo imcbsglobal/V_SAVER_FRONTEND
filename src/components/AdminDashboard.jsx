@@ -5,18 +5,6 @@ import AdminSidebar from "./Adminsidebar";
 import "./AdminDashboard.scss";
 
 /* ─── Icons ─── */
-const EditIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-  </svg>
-);
-const TrashIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-    <polyline points="3 6 5 6 21 6" />
-    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-  </svg>
-);
 const CloseIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -56,7 +44,6 @@ const BlockIcon = () => (
 const cleanDebtorName = (raw = "") =>
   raw.replace(/\d{8,}$/, "").trim();
 
-// Same priority as UserDashboard resolveDisplayName()
 const resolveDisplayName = (user) => {
   if (!user) return "—";
   if (user.debtor_name) return cleanDebtorName(user.debtor_name);
@@ -67,9 +54,6 @@ const resolveDisplayName = (user) => {
   return user.username || "—";
 };
 
-
-
-
 const DEBTOR_API = `/debtors/`;
 
 /* ════════════════════════════════════════════════════════════════ */
@@ -78,8 +62,6 @@ const AdminDashboard = ({ onLogout, userData }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [admins, setAdmins] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [showEditForm, setShowEditForm] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   const [adminName, setAdminName] = useState("Admin");
@@ -140,7 +122,6 @@ const AdminDashboard = ({ onLogout, userData }) => {
       setDebtorSuggestions(results);
       setShowSuggestions(true);
     } catch {
-      // fallback: filter local cache if available
       const filtered = debtors.filter((d) =>
         cleanDebtorName(d.name).toLowerCase().includes(query.toLowerCase())
       );
@@ -165,7 +146,6 @@ const AdminDashboard = ({ onLogout, userData }) => {
       username: debtor.code || prev.username,
       phone_number: debtor.phone2 || prev.phone_number,
       shop_name: name,
-      // Use place as location hint stored in business_name / location
       location: debtor.place || prev.location || "",
     }));
     setShowSuggestions(false);
@@ -185,7 +165,6 @@ const AdminDashboard = ({ onLogout, userData }) => {
     try {
       const res = await API.get(`/admins/`);
       setAdmins(res.data);
-      // fallback stats
       setStats({
         total_admins: res.data.length,
         active_admins: res.data.filter((a) => a.status === "Active").length,
@@ -211,36 +190,6 @@ const AdminDashboard = ({ onLogout, userData }) => {
     } catch (err) {
       const msg = err?.response?.data?.detail || err?.response?.data?.error || "Failed to add user";
       alert(`❌ ${msg}`);
-    }
-  };
-
-  const openEditForm = (user) => {
-    setEditingUser({ ...user, password: "" });
-    setShowEditForm(true);
-  };
-
-  const saveEdit = async () => {
-    if (!editingUser) return;
-    try {
-      const payload = { ...editingUser };
-      if (!payload.password) delete payload.password;
-      await API.patch(`/admins/${editingUser.id}/`, payload);
-      fetchAdmins(); fetchStats();
-      setShowEditForm(false);
-      setEditingUser(null);
-    } catch (err) {
-      const msg = err?.response?.data?.detail || err?.response?.data?.error || "Failed to update";
-      alert(`❌ ${msg}`);
-    }
-  };
-
-  const deleteAdmin = async (id) => {
-    if (!window.confirm("Delete this user?")) return;
-    try {
-      await API.delete(`/admins/${id}/`);
-      fetchAdmins(); fetchStats();
-    } catch {
-      alert("❌ Failed to delete user");
     }
   };
 
@@ -347,14 +296,13 @@ const AdminDashboard = ({ onLogout, userData }) => {
                     <th>#</th>
                     <th>Name</th>
                     <th>Phone</th>
-                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr><td colSpan="4" className="loading-cell"><div className="loading-spinner" /> Loading...</td></tr>
+                    <tr><td colSpan="3" className="loading-cell"><div className="loading-spinner" /> Loading...</td></tr>
                   ) : filteredAdmins.length === 0 ? (
-                    <tr><td colSpan="4" className="empty-cell">No users found</td></tr>
+                    <tr><td colSpan="3" className="empty-cell">No users found</td></tr>
                   ) : (
                     filteredAdmins.map((u, i) => (
                       <tr key={u.id}>
@@ -364,12 +312,6 @@ const AdminDashboard = ({ onLogout, userData }) => {
                           <span>{resolveDisplayName(u)}</span>
                         </td>
                         <td>{u.phone_number || "—"}</td>
-                        <td className="actions-cell">
-                          <div className="actions-inner">
-                            <button className="action-btn edit" title="Edit" onClick={() => openEditForm(u)}><EditIcon /></button>
-                            <button className="action-btn delete" title="Delete" onClick={() => deleteAdmin(u.id)}><TrashIcon /></button>
-                          </div>
-                        </td>
                       </tr>
                     ))
                   )}
@@ -472,66 +414,6 @@ const AdminDashboard = ({ onLogout, userData }) => {
             <div className="modal-footer">
               <button className="cancel-btn" onClick={() => { setShowAddForm(false); resetNewAdmin(); }}>Cancel</button>
               <button className="submit-btn" onClick={addAdmin}>Add User</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═══════════ EDIT USER MODAL ═══════════ */}
-      {showEditForm && editingUser && (
-        <div className="modal-overlay" onClick={() => setShowEditForm(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 className="modal-title">Edit User</h2>
-              <button className="modal-close" onClick={() => setShowEditForm(false)}><CloseIcon /></button>
-            </div>
-
-            <div className="modal-body">
-              <div className="form-grid">
-
-                <div className="form-field">
-                  <label>Shop / Business Name</label>
-                  <input
-                    type="text"
-                    value={editingUser.shop_name || ""}
-                    onChange={(e) => setEditingUser({ ...editingUser, shop_name: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-field">
-                  <label>Username</label>
-                  <input
-                    type="text"
-                    value={editingUser.username || ""}
-                    onChange={(e) => setEditingUser({ ...editingUser, username: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-field">
-                  <label>New Password <span className="label-hint">(leave blank to keep current)</span></label>
-                  <input
-                    type="password"
-                    value={editingUser.password || ""}
-                    onChange={(e) => setEditingUser({ ...editingUser, password: e.target.value })}
-                    placeholder="••••••••"
-                  />
-                </div>
-
-                <div className="form-field">
-                  <label>Phone Number</label>
-                  <input
-                    type="tel"
-                    value={editingUser.phone_number || ""}
-                    onChange={(e) => setEditingUser({ ...editingUser, phone_number: e.target.value })}
-                  />
-                </div>
-
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button className="cancel-btn" onClick={() => setShowEditForm(false)}>Cancel</button>
-              <button className="submit-btn" onClick={saveEdit}>Save Changes</button>
             </div>
           </div>
         </div>

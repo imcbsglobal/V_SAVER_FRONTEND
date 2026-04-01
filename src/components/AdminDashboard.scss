@@ -208,7 +208,6 @@ $radius-lg: 8px;
 
     &:hover { box-shadow: $shadow-raised; transform: translateY(-1px); }
 
-    // Jira-style left accent bar
     &::before {
       content: '';
       position: absolute;
@@ -312,7 +311,6 @@ $radius-lg: 8px;
       border-collapse: collapse;
       table-layout: fixed;
 
-      // ── # and ACTIONS small, NAME fills rest, PHONE medium ──
       thead th:nth-child(1),
       tbody td:nth-child(1) {
         width: 80px;
@@ -329,13 +327,6 @@ $radius-lg: 8px;
         width: 200px;
       }
 
-      thead th:nth-child(4),
-      tbody td:nth-child(4) {
-        width: 140px;
-        text-align: center;
-      }
-
-      // Outer border around entire table
       border: 1px solid $color-border;
 
       thead tr th {
@@ -349,7 +340,6 @@ $radius-lg: 8px;
         background: $color-bg-page;
         white-space: nowrap;
         user-select: none;
-        // Column dividers on header
         border-bottom: 2px solid #B3B9C4;
         border-right: 1px solid $color-border;
 
@@ -367,9 +357,7 @@ $radius-lg: 8px;
             font-size: 14px;
             color: $color-text-primary;
             vertical-align: middle;
-            // Row bottom line
             border-bottom: 1px solid $color-border;
-            // Column divider lines
             border-right: 1px solid $color-border;
 
             &:last-child { border-right: none; }
@@ -427,43 +415,6 @@ $radius-lg: 8px;
     font-weight: 700;
     flex-shrink: 0;
     letter-spacing: 0;
-  }
-}
-
-.actions-cell {
-  text-align: center;
-  vertical-align: middle;
-
-  .actions-inner {
-    display: inline-flex;
-    gap: 6px;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .action-btn {
-    width: 30px;
-    height: 30px;
-    border: none;
-    border-radius: $radius-md;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    background: transparent;
-    transition: background 0.12s ease;
-
-    svg { width: 15px; height: 15px; }
-
-    &.edit {
-      color: $color-text-brand;
-      &:hover { background: $color-tag-blue-bg; }
-    }
-
-    &.delete {
-      color: $color-bg-danger;
-      &:hover { background: $color-tag-red-bg; }
-    }
   }
 }
 
@@ -739,10 +690,8 @@ $radius-lg: 8px;
 @media (max-width: 768px) {
   .page-header .header-left .page-title { font-size: 20px; }
 
-  // Hide search + Add User from the top header
   .header-actions { display: none !important; }
 
-  // Show mobile controls (between stats & table)
   .table-controls--mobile {
     display: flex;
     gap: 8px;
@@ -757,7 +706,6 @@ $radius-lg: 8px;
     .add-user-btn { flex-shrink: 0; }
   }
 
-  // Stats: compact horizontal 3-column row
   .stats-container {
     grid-template-columns: repeat(3, 1fr);
     gap: 6px;
@@ -783,7 +731,6 @@ $radius-lg: 8px;
     }
   }
 
-  // ── Mobile table: hide PHONE & ACTIONS headers, stack content ──
   .table-container {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -791,7 +738,7 @@ $radius-lg: 8px;
 
   .admin-table {
     table-layout: auto !important;
-    min-width: 480px;
+    min-width: 340px;
 
     thead th,
     tbody td {
@@ -815,11 +762,6 @@ $radius-lg: 8px;
     tbody td:nth-child(3) {
       width: 130px !important;
     }
-
-    thead th:nth-child(4),
-    tbody td:nth-child(4) {
-      width: 90px !important;
-    }
   }
 
   .name-cell {
@@ -835,15 +777,6 @@ $radius-lg: 8px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-    }
-  }
-
-  .actions-inner {
-    gap: 4px;
-    .action-btn {
-      width: 26px;
-      height: 26px;
-      svg { width: 13px; height: 13px; }
     }
   }
 }

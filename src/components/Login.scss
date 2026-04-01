@@ -14,9 +14,6 @@ $dark:         #1a1a2e;
 $grey:         #64748b;
 $grey-light:   #94a3b8;
 $border:       #ede8e0;
-$green:        #16a34a;
-$green-pale:   #f0fdf4;
-$green-border: #86efac;
 $font-body:    'Plus Jakarta Sans', sans-serif;
 $font-display: 'Fraunces', serif;
 
@@ -88,62 +85,6 @@ $font-display: 'Fraunces', serif;
   letter-spacing: 0.3px;
 }
 
-// ─── WhatsApp animation ───────────────────────────────────────────────────────
-.wa-illustration {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.wa-bubble {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  background: rgba($white, 0.18);
-  border: 1.5px solid rgba($white, 0.28);
-  border-radius: 18px 18px 18px 4px;
-  padding: 10px 16px;
-  color: $white;
-  font-size: 13px;
-  font-weight: 600;
-  backdrop-filter: blur(8px);
-  animation: bubbleIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
-
-  &--delay {
-    animation-delay: 0.14s;
-    border-radius: 18px 18px 4px 18px;
-    align-self: flex-end;
-  }
-}
-
-@keyframes bubbleIn {
-  from { opacity: 0; transform: scale(0.85) translateY(8px); }
-  to   { opacity: 1; transform: scale(1)    translateY(0);   }
-}
-
-.wa-dots {
-  display: flex;
-  gap: 5px;
-  padding-left: 4px;
-
-  span {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: rgba($white, 0.65);
-    animation: dotBounce 1.4s ease-in-out infinite;
-    &:nth-child(2) { animation-delay: 0.2s; }
-    &:nth-child(3) { animation-delay: 0.4s; }
-  }
-}
-
-@keyframes dotBounce {
-  0%, 80%, 100% { transform: translateY(0);   opacity: 0.5; }
-  40%            { transform: translateY(-5px); opacity: 1;   }
-}
-
 // ══════════════════════════════════════════════════════════════════════════════
 //  RIGHT
 // ══════════════════════════════════════════════════════════════════════════════
@@ -199,58 +140,6 @@ $font-display: 'Fraunces', serif;
   to   { opacity: 1; transform: translateY(0);    }
 }
 
-// ─── Tab switcher ─────────────────────────────────────────────────────────────
-.tab-switcher {
-  display: flex;
-  background: #f5f3f0;
-  border-radius: 14px;
-  padding: 4px;
-  margin-bottom: 28px;
-  position: relative;
-  gap: 2px;
-}
-
-.tab-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 10px 14px;
-  border: none;
-  border-radius: 11px;
-  background: transparent;
-  font-size: 13px;
-  font-weight: 700;
-  font-family: $font-body;
-  color: $grey;
-  cursor: pointer;
-  position: relative;
-  z-index: 1;
-  transition: color 0.22s;
-
-  svg { transition: stroke 0.22s; }
-
-  &--active {
-    color: $dark;
-    svg { stroke: $dark; }
-  }
-}
-
-.tab-indicator {
-  position: absolute;
-  top: 4px;
-  bottom: 4px;
-  left: 4px;
-  width: calc(50% - 5px);
-  background: $white;
-  border-radius: 10px;
-  box-shadow: 0 1px 4px rgba(0,0,0,.10), 0 0 0 1px rgba($border, 0.6);
-  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
-
-  &--right { transform: translateX(calc(100% + 6px)); }
-}
-
 // ─── Badge ────────────────────────────────────────────────────────────────────
 .badge-row { margin-bottom: 20px; }
 
@@ -271,19 +160,11 @@ $font-display: 'Fraunces', serif;
     color: $orange-dark;
   }
 
-  &--green {
-    background: $green-pale;
-    border: 1px solid rgba($green, 0.25);
-    color: $green;
-  }
-
   &__dot {
     width: 6px; height: 6px;
     border-radius: 50%;
     background: $orange;
     animation: pulse 2s ease-in-out infinite;
-
-    &--green { background: $green; }
   }
 }
 
@@ -329,24 +210,6 @@ $font-display: 'Fraunces', serif;
   svg { flex-shrink: 0; margin-top: 1px; stroke: #e74c3c; }
 }
 
-.success-box {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  padding: 12px 14px;
-  background: $green-pale;
-  border: 1.5px solid $green-border;
-  border-radius: 12px;
-  margin-bottom: 18px;
-  font-size: 13px;
-  font-weight: 500;
-  color: $green;
-  line-height: 1.5;
-  animation: fadeSlide 0.28s ease;
-
-  svg { flex-shrink: 0; margin-top: 1px; stroke: $green; }
-}
-
 @keyframes fadeSlide {
   from { opacity: 0; transform: translateY(-5px); }
   to   { opacity: 1; transform: translateY(0);    }
@@ -374,8 +237,7 @@ $font-display: 'Fraunces', serif;
 
   input[type="email"],
   input[type="password"],
-  input[type="text"],
-  input[type="tel"] {
+  input[type="text"] {
     width: 100%;
     padding: 13px 16px;
     border: 1.5px solid $border;
@@ -412,8 +274,7 @@ $font-display: 'Fraunces', serif;
 
     input[type="email"],
     input[type="password"],
-    input[type="text"],
-    input[type="tel"] {
+    input[type="text"] {
       border-color: rgba($orange, 0.4);
       background: $white;
       box-shadow: 0 0 0 4px rgba($orange, 0.08);
@@ -421,36 +282,6 @@ $font-display: 'Fraunces', serif;
 
     .field__bar { transform: scaleX(1); }
   }
-}
-
-// ─── Phone prefix ─────────────────────────────────────────────────────────────
-.phone-wrap {
-  display: flex;
-
-  .phone-prefix {
-    display: flex;
-    align-items: center;
-    padding: 0 14px;
-    border: 1.5px solid $border;
-    border-right: none;
-    border-radius: 12px 0 0 12px;
-    background: #f5f3f0;
-    font-size: 14px;
-    font-weight: 700;
-    color: $grey;
-    white-space: nowrap;
-    transition: border-color 0.22s;
-    flex-shrink: 0;
-  }
-
-  input[type="tel"] {
-    border-radius: 0 12px 12px 0 !important;
-    flex: 1;
-  }
-}
-
-.field--focused .phone-prefix {
-  border-color: rgba($orange, 0.4);
 }
 
 // ─── Password wrapper ─────────────────────────────────────────────────────────
@@ -580,16 +411,6 @@ $font-display: 'Fraunces', serif;
     transform: none;
     box-shadow: none;
   }
-
-  // WhatsApp variant — slightly greener shadow
-  &--wa {
-    background: linear-gradient(135deg, #1a7d3c 0%, #25a244 50%, #2ec95b 100%);
-    box-shadow: 0 6px 20px rgba(37, 162, 68, 0.35), 0 2px 6px rgba(37, 162, 68, 0.2);
-
-    &:hover:not(:disabled) {
-      box-shadow: 0 10px 30px rgba(37, 162, 68, 0.45), 0 4px 10px rgba(37, 162, 68, 0.25);
-    }
-  }
 }
 
 // ─── Spinner ──────────────────────────────────────────────────────────────────
@@ -603,147 +424,6 @@ $font-display: 'Fraunces', serif;
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
-
-// ─── Step dots ────────────────────────────────────────────────────────────────
-.step-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 20px;
-}
-
-.step-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: $border;
-  transition: all 0.3s ease;
-
-  &--active {
-    background: $orange;
-    width: 24px;
-    border-radius: 4px;
-  }
-  &--done { background: $green; }
-}
-
-// ─── Back button ──────────────────────────────────────────────────────────────
-.back-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: none;
-  border: none;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: $font-body;
-  color: $grey;
-  cursor: pointer;
-  padding: 0;
-  margin-bottom: 18px;
-  transition: color 0.2s;
-
-  &:hover { color: $orange; }
-}
-
-// ─── Masked number chip ───────────────────────────────────────────────────────
-.masked-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: $green-pale;
-  border: 1px solid $green-border;
-  border-radius: 10px;
-  padding: 7px 13px;
-  font-size: 13.5px;
-  font-weight: 700;
-  color: $green;
-  margin-bottom: 20px;
-}
-
-// ─── OTP label ────────────────────────────────────────────────────────────────
-.otp-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  color: $grey;
-  margin-bottom: 12px;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
-}
-
-// ─── OTP grid ─────────────────────────────────────────────────────────────────
-.otp-grid {
-  display: flex;
-  gap: 9px;
-  justify-content: center;
-  margin-bottom: 6px;
-
-  input {
-    width: 48px; height: 56px;
-    text-align: center;
-    font-size: 22px;
-    font-weight: 700;
-    font-family: $font-body;
-    color: $dark;
-    border: 1.5px solid $border;
-    border-radius: 12px;
-    background: #fafaf8;
-    outline: none;
-    caret-color: $orange;
-    transition: border-color 0.22s, box-shadow 0.22s, transform 0.15s;
-
-    &:focus {
-      border-color: rgba($orange, 0.5);
-      box-shadow: 0 0 0 4px rgba($orange, 0.10);
-      background: $white;
-      transform: translateY(-2px);
-    }
-
-    &.otp-filled {
-      border-color: $orange;
-      background: $orange-pale;
-      color: $orange-dark;
-    }
-
-    &:disabled { background: #f5f3f0; cursor: not-allowed; }
-  }
-}
-
-// ─── Timer / Resend ───────────────────────────────────────────────────────────
-.otp-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 22px;
-  margin-top: 4px;
-}
-
-.otp-timer {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12.5px;
-  font-weight: 500;
-  color: $grey-light;
-}
-
-.resend-btn {
-  background: none;
-  border: none;
-  font-size: 12.5px;
-  font-weight: 700;
-  font-family: $font-body;
-  color: $orange;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: background 0.2s;
-
-  &:hover:not(:disabled) { background: $orange-pale; }
-  &:disabled { color: $grey-light; cursor: not-allowed; }
-}
 
 // ─── Footer ───────────────────────────────────────────────────────────────────
 .form-footer {
@@ -765,7 +445,6 @@ $font-display: 'Fraunces', serif;
     gap: 20px;
   }
 
-  .wa-illustration { display: none; }
   .brand-logo { width: 160px; }
 
   .login-right {
@@ -782,6 +461,4 @@ $font-display: 'Fraunces', serif;
   .brand-card { padding: 20px 24px; }
   .brand-logo { width: 140px; }
   .form-box   { padding: 24px 18px 22px; border-radius: 20px; }
-
-  .otp-grid input { width: 42px; height: 50px; font-size: 20px; gap: 6px; }
 }

@@ -1,6 +1,8 @@
+// ✅ Line 1-3 of api.js
 import axios from "axios";
+import { API_BASE_URL } from "./config.js";
 
-const BASE = import.meta.env.VITE_API_BASE_URL || "https://vsaverbackend.imcbs.com/api";
+const BASE = import.meta.env.VITE_API_BASE_URL || API_BASE_URL;
  
 
 
