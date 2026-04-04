@@ -6,6 +6,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import AdminSidebar from './Adminsidebar';
 import './AdminOfferMaster.scss';
 import API from '../services/api';
+import { generateQRCode } from '../services/qrService';
 
 const ROWS_PER_PAGE = 8;
 
@@ -33,6 +34,7 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
   const [currentPage, setCurrentPage]           = useState(1);
   const [mediaModal, setMediaModal]             = useState(null);
   const [qrModal, setQrModal]                   = useState(null); // { offerTitle, branches }
+  const [qrImages, setQrImages]                 = useState({});  // { branchId: dataUrl }
 
   const [stats, setStats] = useState({
     total: 0, active: 0, inactive: 0, scheduled: 0,
@@ -72,6 +74,24 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
       return () => clearTimeout(t);
     }
   }, [error, successMessage]);
+
+  // Generate QR codes client-side whenever the QR modal opens
+  useEffect(() => {
+    if (!qrModal?.branches?.length) return;
+    const origin = window.location.origin; // e.g. http://192.168.1.20:5173
+    qrModal.branches.forEach(async (branch) => {
+      if (qrImages[branch.id]) return; // already generated
+      try {
+        // Build the public branch-offers URL using the current browser origin
+        // so it always matches whatever host/IP the app is served from.
+        const branchUrl = `${origin}/branch/${branch.id}/offers/`;
+        const dataUrl = await generateQRCode(branchUrl);
+        setQrImages(prev => ({ ...prev, [branch.id]: dataUrl }));
+      } catch (e) {
+        console.error('QR generation failed for branch', branch.id, e);
+      }
+    });
+  }, [qrModal]);
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   const handleToggleSidebar = () => setIsSidebarOpen(p => !p);
@@ -289,7 +309,8 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
 
   // ── Print QR ─────────────────────────────────────────────────────────────
   const handlePrintQR = (branch) => {
-    if (!branch.qr_code_url) return;
+    const qrSrc = qrImages[branch.id] || branch.qr_code_url;
+    if (!qrSrc) return;
     const win = window.open('', '_blank', 'width=420,height=560');
     win.document.write(`
       <!DOCTYPE html><html>
@@ -306,7 +327,7 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
       <body>
         <h2>${branch.branch_name}</h2>
         <p>${branch.branch_code}</p>
-        <img src="${branch.qr_code_url}" alt="QR Code"
+        <img src="${qrSrc}" alt="QR Code"
           onload="window.print(); setTimeout(()=>window.close(),500);" />
         <small>Scan to view all active offers</small>
       </body></html>`);
@@ -1014,7 +1035,7 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
                               {/* QR Button */}
                               <button
                                 className="om-btn-qr"
-                                onClick={() => setQrModal({ offerTitle: offer.title, branches: offer.branches || [] })}
+                                onClick={() => { setQrImages({}); setQrModal({ offerTitle: offer.title, branches: offer.branches || [] }); }}
                                 disabled={loading}
                                 title="View & Print Branch QR Codes"
                               >
@@ -1180,10 +1201,10 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
                         </span>
                         <span className="om-qr-branch-code">{branch.branch_code}</span>
                       </div>
-                      {branch.qr_code_url ? (
+                      {qrImages[branch.id] ? (
                         <>
                           <div className="om-qr-img-wrap">
-                            <img src={branch.qr_code_url} alt={`QR for ${branch.branch_name}`} />
+                            <img src={qrImages[branch.id]} alt={`QR for ${branch.branch_name}`} />
                           </div>
                           <p className="om-qr-hint">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:'13px',height:'13px',display:'inline-block',verticalAlign:'middle',marginRight:'4px'}}><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
@@ -1207,7 +1228,7 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
                           </div>
                         </>
                       ) : (
-                        <p className="om-qr-not-ready">QR not generated yet</p>
+                        <p className="om-qr-not-ready">Generating QR…</p>
                       )}
                     </div>
                   ))}
