@@ -9,6 +9,8 @@ const UserDashboard = ({ onLogout, userData }) => {
   const [shopName, setShopName]             = useState('');
   const [userBalance, setUserBalance]       = useState(null);
   const [userPlace, setUserPlace]           = useState('');
+  const [branchName, setBranchName]         = useState('');
+  const [branchAddress, setBranchAddress]   = useState('');
   const [stats, setStats] = useState({
     total_offer_masters: 0,
     active_offer_masters: 0,
@@ -75,6 +77,8 @@ const UserDashboard = ({ onLogout, userData }) => {
     setShopName(src.shop_name || '');
     setUserBalance(src.balance ?? null);
     setUserPlace(src.place || '');
+    setBranchName(src.branch_name || '');
+    setBranchAddress(src.branch_address || '');
     fetchAll();
   }, [userData]);
 
@@ -93,7 +97,13 @@ const UserDashboard = ({ onLogout, userData }) => {
       const res = await fetch(`${API_BASE_URL}/dashboard/stats/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) setStats(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        setStats(data);
+        // Update branch info from stats API (authoritative source)
+        if (data.branch_name)    setBranchName(data.branch_name);
+        if (data.branch_address) setBranchAddress(data.branch_address);
+      }
     } catch (e) { console.error('Stats error:', e); }
     finally { setLoading(false); }
   };
@@ -223,6 +233,15 @@ const UserDashboard = ({ onLogout, userData }) => {
                     </span>
                   )}
                 </h1>
+                {branchName && (
+                  <div className="ud-branch-badge">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+                    </svg>
+                    <span>{branchName}</span>
+                    {branchAddress && <span className="ud-branch-badge-addr">&nbsp;· {branchAddress}</span>}
+                  </div>
+                )}
                 <p className="ud-date">
                   {new Date().toLocaleDateString('en-IN', {
                     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
