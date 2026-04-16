@@ -1,0 +1,544 @@
+// ============================================================================
+// AdminCommonNotifications.scss
+// Layout: form + phone preview only
+// Jira-style: flat, compact, #0052cc accent, #f4f5f7 bg
+// Mobile-optimized
+// ============================================================================
+
+// ── Layout ────────────────────────────────────────────────────────────────────
+.cn-container {
+  display: flex;
+  min-height: 100vh;
+  background: #f4f5f7;
+  overflow-x: hidden;
+}
+
+// Dark overlay on mobile when sidebar is open
+.cn-sidebar-overlay {
+  display: none;
+
+  @media (max-width: 767px) {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(9, 30, 66, 0.45);
+    z-index: 99;
+  }
+}
+
+.cn-main {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  transition: margin-left 0.15s ease;
+
+  &.cn-sidebar-open   { margin-left: 240px; }
+  &.cn-sidebar-closed { margin-left: 64px; }
+
+  @media (max-width: 767px) {
+    &.cn-sidebar-open,
+    &.cn-sidebar-closed {
+      margin-left: 0 !important;
+    }
+  }
+}
+
+.cn-wrapper {
+  padding: 24px 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+  box-sizing: border-box;
+
+  @media (max-width: 767px) {
+    padding: 0 0 24px;
+  }
+}
+
+// ── Mobile top bar ────────────────────────────────────────────────────────────
+.cn-mobile-topbar {
+  display: none;
+
+  @media (max-width: 767px) {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #fff;
+    border-bottom: 1px solid #dfe1e6;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+}
+
+.cn-hamburger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #dfe1e6;
+  border-radius: 4px;
+  background: #fafbfc;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+
+  svg {
+    width: 18px;
+    height: 18px;
+    stroke: #42526e;
+  }
+
+  &:hover { background: #f4f5f7; }
+  &:active { background: #ebecf0; }
+}
+
+.cn-mobile-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #172b4d;
+}
+
+// ── Page header ───────────────────────────────────────────────────────────────
+.cn-page-header {
+  margin-bottom: 18px;
+
+  @media (max-width: 767px) {
+    display: none; // replaced by mobile topbar
+  }
+}
+
+.cn-page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #172b4d;
+  margin: 0 0 3px;
+}
+
+.cn-page-sub {
+  font-size: 13px;
+  color: #5e6c84;
+  margin: 0;
+}
+
+// ── Alerts ────────────────────────────────────────────────────────────────────
+.cn-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  margin-bottom: 14px;
+
+  svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+  &.cn-alert-error   { background: #ffebe6; color: #bf2600; border: 1px solid #ffbdad; svg { stroke: #bf2600; } }
+  &.cn-alert-success { background: #e3fcef; color: #006644; border: 1px solid #abf5d1; svg { stroke: #006644; } }
+
+  @media (max-width: 767px) {
+    margin: 12px 16px;
+    font-size: 12.5px;
+  }
+}
+
+// ── Two-column main grid ──────────────────────────────────────────────────────
+.cn-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 16px;
+  align-items: start;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr 300px;
+  }
+
+  @media (max-width: 767px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px 16px 0;
+  }
+}
+
+// ── Shared card base ──────────────────────────────────────────────────────────
+.cn-form-card,
+.cn-preview-card {
+  background: #ffffff;
+  border: 1px solid #dfe1e6;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+// ── Card header ───────────────────────────────────────────────────────────────
+.cn-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #dfe1e6;
+}
+
+.cn-card-header-icon {
+  width: 28px;
+  height: 28px;
+  background: #deebff;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  svg { width: 14px; height: 14px; stroke: #0052cc; }
+}
+
+.cn-card-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #172b4d;
+  margin: 0;
+}
+
+.cn-card-sub {
+  font-size: 11.5px;
+  color: #5e6c84;
+  margin: 0;
+}
+
+// ── Form body ─────────────────────────────────────────────────────────────────
+.cn-form-body {
+  padding: 16px;
+
+  @media (max-width: 767px) {
+    padding: 14px;
+  }
+}
+
+.cn-preset-section { margin-bottom: 14px; }
+
+.cn-presets-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+
+  @media (max-width: 767px) {
+    gap: 5px;
+  }
+}
+
+.cn-preset-btn {
+  padding: 4px 11px;
+  border: 1px solid #dfe1e6;
+  border-radius: 3px;
+  background: #fafbfc;
+  color: #42526e;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+
+  &:hover  { background: #deebff; border-color: #4c9aff; color: #0052cc; }
+  &:active { background: #b3d4ff; border-color: #0052cc; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  @media (max-width: 767px) {
+    padding: 5px 10px;
+    font-size: 12px;
+    // Larger touch targets on mobile
+    min-height: 32px;
+  }
+}
+
+.cn-field { margin-bottom: 12px; }
+
+.cn-field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #42526e;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.cn-req { color: #de350b; margin-left: 2px; }
+
+.cn-hint {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #5e6c84;
+  margin-left: 4px;
+}
+
+.cn-input,
+.cn-textarea {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid #dfe1e6;
+  border-radius: 3px;
+  background: #fafbfc;
+  color: #172b4d;
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.12s;
+
+  &:focus    { border-color: #4c9aff; background: #fff; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  @media (max-width: 767px) {
+    // Prevent iOS zoom on focus (font-size must be ≥16px)
+    font-size: 16px;
+    padding: 9px 12px;
+  }
+}
+
+.cn-textarea {
+  resize: vertical;
+  min-height: 72px;
+  line-height: 1.5;
+
+  @media (max-width: 767px) {
+    min-height: 90px;
+  }
+}
+
+.cn-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+.cn-img-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .cn-input { flex: 1; min-width: 0; }
+}
+
+.cn-img-thumb {
+  width: 46px;
+  height: 46px;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 1px solid #dfe1e6;
+  flex-shrink: 0;
+}
+
+.cn-img-placeholder {
+  width: 46px;
+  height: 46px;
+  border-radius: 4px;
+  background: #f4f5f7;
+  border: 1px dashed #c1c7d0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  svg { width: 16px; height: 16px; stroke: #a5adba; }
+}
+
+// ── Form action buttons ───────────────────────────────────────────────────────
+.cn-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+
+  @media (max-width: 767px) {
+    margin-top: 8px;
+  }
+}
+
+.cn-btn-send-now {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 20px;
+  background: #0052cc;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s;
+
+  svg {
+    width: 13px;
+    height: 13px;
+    stroke: #fff;
+    flex-shrink: 0;
+  }
+
+  &:hover:not(:disabled) { background: #0747a6; }
+  &:active:not(:disabled) { background: #0535a0; }
+  &:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  @media (max-width: 767px) {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 20px;
+    font-size: 14px;
+    border-radius: 4px;
+  }
+}
+
+// ── Spinner (inside Send Now while loading) ───────────────────────────────────
+.cn-spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: cn-spin 0.65s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes cn-spin {
+  to { transform: rotate(360deg); }
+}
+
+// ── Phone preview panel ───────────────────────────────────────────────────────
+.cn-preview-panel {
+  position: sticky;
+  top: 24px;
+
+  @media (max-width: 767px) {
+    position: static;
+  }
+}
+
+.cn-phone-wrap {
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  background: #f4f5f7;
+
+  @media (max-width: 767px) {
+    padding: 16px;
+  }
+}
+
+.cn-phone {
+  width: 210px;
+  background: #f9f9fb;
+  border: 1.5px solid #dfe1e6;
+  border-radius: 22px;
+  overflow: hidden;
+  font-size: 12px;
+  box-shadow: 0 4px 16px rgba(9, 30, 66, 0.12);
+
+  @media (max-width: 767px) {
+    width: 100%;
+    max-width: 280px;
+  }
+}
+
+.cn-phone-bar {
+  background: #f9f9fb;
+  padding: 8px 14px 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #555;
+  font-weight: 600;
+}
+
+.cn-phone-signals {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.cn-phone-notif {
+  background: #ffffff;
+  margin: 6px 8px;
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: 0 1px 4px rgba(9, 30, 66, 0.1);
+}
+
+.cn-phone-notif-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.cn-phone-app-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: #0052cc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  svg { width: 10px; height: 10px; }
+}
+
+.cn-phone-app-name {
+  font-size: 10.5px;
+  color: #6b778c;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.cn-phone-time {
+  margin-left: auto;
+  font-size: 10px;
+  color: #97a0af;
+}
+
+.cn-phone-notif-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #172b4d;
+  margin-bottom: 3px;
+  line-height: 1.3;
+}
+
+.cn-phone-notif-body {
+  font-size: 11.5px;
+  color: #42526e;
+  line-height: 1.45;
+  margin-bottom: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cn-phone-notif-img {
+  width: 100%;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+}
+
+.cn-phone-footer {
+  padding: 5px 12px 10px;
+  text-align: right;
+  font-size: 10px;
+  color: #b0bac9;
+}

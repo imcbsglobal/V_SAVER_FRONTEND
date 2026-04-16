@@ -9,7 +9,8 @@ import ViewProducts from "./components/ViewProducts";
 import OfferMaster from "./components/OfferMaster";
 import AdminOfferMaster from "./components/AdminOfferMaster";
 import AdminBranchMaster from "./components/Adminbranchmaster";
-import BranchOffersPage from "./components/BranchOffersPage"; // ✅ NEW
+import BranchOffersPage from "./components/BranchOffersPage";
+import AdminCommonNotifications from "./components/Admincommonnotifications";
 import { setAuthToken } from "./services/api";
 import './App.css';
 
@@ -21,7 +22,6 @@ function AppRoutes() {
   const [userType, setUserType] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check authentication on mount
   useEffect(() => {
     checkAuthStatus();
   }, []);
@@ -34,7 +34,7 @@ function AppRoutes() {
       try {
         const user = JSON.parse(userStr);
         const type = user?.is_admin ? 'admin' : 'user';
-        
+
         setAuthToken(token);
         setUserData(user);
         setUserType(type);
@@ -74,14 +74,12 @@ function AppRoutes() {
     navigate('/login', { replace: true });
   };
 
-  // Protected Route Component
   const ProtectedRoute = ({ children, allowedUserType }) => {
     if (!isAuthenticated) {
       return <Navigate to="/login" replace />;
     }
-    
+
     if (allowedUserType && userType !== allowedUserType) {
-      // If user tries to access wrong dashboard, redirect to correct one
       const correctPath = userType === 'admin' ? '/admin-dashboard' : '/user-dashboard';
       return <Navigate to={correctPath} replace />;
     }
@@ -89,7 +87,6 @@ function AppRoutes() {
     return children;
   };
 
-  // Show loading while checking auth status
   if (isLoading) {
     return (
       <div style={{
@@ -140,7 +137,7 @@ function AppRoutes() {
         />
 
         {/* ========== ADMIN ROUTES ========== */}
-        
+
         {/* Admin Dashboard */}
         <Route
           path="/admin-dashboard"
@@ -167,6 +164,16 @@ function AppRoutes() {
           element={
             <ProtectedRoute allowedUserType="admin">
               <AdminBranchMaster onLogout={handleLogout} userData={userData} />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Admin Common Notifications */}
+        <Route
+          path="/admin/common-notifications"
+          element={
+            <ProtectedRoute allowedUserType="admin">
+              <AdminCommonNotifications onLogout={handleLogout} userData={userData} />
             </ProtectedRoute>
           }
         />
@@ -242,6 +249,7 @@ function AppRoutes() {
             <Navigate to={isAuthenticated ? (userType === 'admin' ? '/admin-dashboard' : '/user-dashboard') : '/login'} replace />
           }
         />
+
       </Routes>
     </div>
   );
