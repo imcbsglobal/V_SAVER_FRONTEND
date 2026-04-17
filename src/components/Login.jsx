@@ -22,68 +22,68 @@ const IconArrow = () => (
   </svg>
 );
 
-const IconBack = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="19" y1="12" x2="5" y2="12"/>
-    <polyline points="12 19 5 12 12 5"/>
-  </svg>
-);
+// const IconBack = () => (
+//   <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+//     stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+//     <line x1="19" y1="12" x2="5" y2="12"/>
+//     <polyline points="12 19 5 12 12 5"/>
+//   </svg>
+// );
 
 const ErrorBox = ({ msg }) => msg ? (
   <div className="error-box"><IconError />{msg}</div>
 ) : null;
 
-// ── OtpStep OUTSIDE Login so it never remounts on parent re-render ────────────
-const OtpStep = ({ otp, otpRefs, phone, error, isLoading, resendTimer,
-                   onVerify, onChange, onKeyDown, onPaste, onResend, onBack }) => (
-  <>
-    <button type="button" className="back-btn" onClick={onBack}>
-      <IconBack /> Back
-    </button>
-
-    <h1 className="greeting">Enter OTP</h1>
-    <p className="sub">
-      Sent to your WhatsApp&nbsp;
-      <strong>+91 {phone.replace(/\D/g, "").replace(/(\d{5})(\d{5})/, "$1 $2")}</strong>
-    </p>
-    <ErrorBox msg={error} />
-
-    <form onSubmit={onVerify} noValidate>
-      <div className="otp-row">
-        {otp.map((digit, i) => (
-          <input
-            key={i}
-            ref={el => otpRefs.current[i] = el}
-            type="text"
-            inputMode="numeric"
-            maxLength={1}
-            value={digit}
-            onChange={e => onChange(i, e)}
-            onKeyDown={e => onKeyDown(i, e)}
-            onPaste={i === 0 ? onPaste : undefined}
-            className={`otp-cell ${digit ? "otp-cell--filled" : ""}`}
-            disabled={isLoading}
-            autoFocus={i === 0}
-            autoComplete="one-time-code"
-          />
-        ))}
-      </div>
-
-      <div className="resend-row">
-        {resendTimer > 0
-          ? <span className="resend-timer">Resend in {resendTimer}s</span>
-          : <button type="button" className="resend-btn" onClick={onResend} disabled={isLoading}>Resend OTP</button>
-        }
-      </div>
-
-      <button type="submit" className="login-btn login-btn--teal"
-        disabled={isLoading || otp.join("").length < 6}>
-        {isLoading ? <><span className="spinner" />Verifying…</> : <>Verify & Sign In<IconArrow /></>}
-      </button>
-    </form>
-  </>
-);
+// ── OtpStep — kept for mobile API use, not rendered on web ───────────────────
+// const OtpStep = ({ otp, otpRefs, phone, error, isLoading, resendTimer,
+//                    onVerify, onChange, onKeyDown, onPaste, onResend, onBack }) => (
+//   <>
+//     <button type="button" className="back-btn" onClick={onBack}>
+//       <IconBack /> Back
+//     </button>
+//
+//     <h1 className="greeting">Enter OTP</h1>
+//     <p className="sub">
+//       Sent to your WhatsApp&nbsp;
+//       <strong>+91 {phone.replace(/\D/g, "").replace(/(\d{5})(\d{5})/, "$1 $2")}</strong>
+//     </p>
+//     <ErrorBox msg={error} />
+//
+//     <form onSubmit={onVerify} noValidate>
+//       <div className="otp-row">
+//         {otp.map((digit, i) => (
+//           <input
+//             key={i}
+//             ref={el => otpRefs.current[i] = el}
+//             type="text"
+//             inputMode="numeric"
+//             maxLength={1}
+//             value={digit}
+//             onChange={e => onChange(i, e)}
+//             onKeyDown={e => onKeyDown(i, e)}
+//             onPaste={i === 0 ? onPaste : undefined}
+//             className={`otp-cell ${digit ? "otp-cell--filled" : ""}`}
+//             disabled={isLoading}
+//             autoFocus={i === 0}
+//             autoComplete="one-time-code"
+//           />
+//         ))}
+//       </div>
+//
+//       <div className="resend-row">
+//         {resendTimer > 0
+//           ? <span className="resend-timer">Resend in {resendTimer}s</span>
+//           : <button type="button" className="resend-btn" onClick={onResend} disabled={isLoading}>Resend OTP</button>
+//         }
+//       </div>
+//
+//       <button type="submit" className="login-btn login-btn--teal"
+//         disabled={isLoading || otp.join("").length < 6}>
+//         {isLoading ? <><span className="spinner" />Verifying…</> : <>Verify & Sign In<IconArrow /></>}
+//       </button>
+//     </form>
+//   </>
+// );
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  Main Component
@@ -99,21 +99,24 @@ function Login({ onAdminLogin = () => {}, onUserLogin = () => {} }) {
   const [adminForm,    setAdminForm]    = useState({ email: "", password: "", clientId: "" });
   const [showPassword, setShowPassword] = useState(false);
 
-  const [custSubMode, setCustSubMode] = useState("login");
-  const [custStep,    setCustStep]    = useState(1);
-  const [phone,       setPhone]       = useState("");
-  const [email,       setEmail]       = useState("");
-  const [name,        setName]        = useState("");   // ← NEW
-  const [otp,         setOtp]         = useState(["", "", "", "", "", ""]);
-  const [resendTimer, setResendTimer] = useState(0);
-  const otpRefs = useRef([]);
+  // ── Customer state — kept for mobile API, not used in web UI ──────────────
+  // const [custSubMode, setCustSubMode] = useState("login");
+  // const [custStep,    setCustStep]    = useState(1);
+  // const [phone,       setPhone]       = useState("");
+  // const [email,       setEmail]       = useState("");
+  // const [name,        setName]        = useState("");
+  // const [otp,         setOtp]         = useState(["", "", "", "", "", ""]);
+  // const [resendTimer, setResendTimer] = useState(0);
+  // const otpRefs = useRef([]);
 
-  const switchMode = (m) => { setMode(m); setError(""); resetCustState(); };
-  const switchCustSubMode = (sub) => { setCustSubMode(sub); setError(""); resetCustState(); };
-  const resetCustState = () => {
-    setCustStep(1); setPhone(""); setEmail(""); setName("");   // ← name reset added
-    setOtp(["", "", "", "", "", ""]); setResendTimer(0);
-  };
+  const switchMode = (m) => { setMode(m); setError(""); };
+
+  // ── Customer state helpers — kept for mobile API, not used in web UI ───────
+  // const switchCustSubMode = (sub) => { setCustSubMode(sub); setError(""); resetCustState(); };
+  // const resetCustState = () => {
+  //   setCustStep(1); setPhone(""); setEmail(""); setName("");
+  //   setOtp(["", "", "", "", "", ""]); setResendTimer(0);
+  // };
 
   // ══ ADMIN SUBMIT ══════════════════════════════════════════════════════════
   const handleAdminSubmit = async (e) => {
@@ -145,177 +148,177 @@ function Login({ onAdminLogin = () => {}, onUserLogin = () => {} }) {
     } finally { setIsLoading(false); }
   };
 
-  // ══ RESEND TIMER ══════════════════════════════════════════════════════════
-  const startResend = () => {
-    setResendTimer(30);
-    const id = setInterval(() => {
-      setResendTimer(prev => { if (prev <= 1) { clearInterval(id); return 0; } return prev - 1; });
-    }, 1000);
-  };
+  // ══ RESEND TIMER — kept for mobile API ════════════════════════════════════
+  // const startResend = () => {
+  //   setResendTimer(30);
+  //   const id = setInterval(() => {
+  //     setResendTimer(prev => { if (prev <= 1) { clearInterval(id); return 0; } return prev - 1; });
+  //   }, 1000);
+  // };
 
-  // ══ SEND OTP — LOGIN ══════════════════════════════════════════════════════
-  const handleLoginSendOtp = async (e) => {
-    e.preventDefault();
-    setError("");
-    const clean = phone.replace(/\D/g, "");
-    if (clean.length < 10) { setError("Please enter a valid 10-digit mobile number."); return; }
-    setIsLoading(true);
-    try {
-      await API.post("/user/request-otp/", { phone_number: clean });
-      setCustStep(2);
-      startResend();
-    } catch (err) {
-      const status = err?.response?.status;
-      const msg    = err?.response?.data?.error || "";
-      if (status === 404) setError("This number is not registered. Please sign up first.");
-      else                setError(msg || "Failed to send OTP. Please try again.");
-    } finally { setIsLoading(false); }
-  };
+  // ══ SEND OTP — LOGIN — kept for mobile API ════════════════════════════════
+  // const handleLoginSendOtp = async (e) => {
+  //   e.preventDefault();
+  //   setError("");
+  //   const clean = phone.replace(/\D/g, "");
+  //   if (clean.length < 10) { setError("Please enter a valid 10-digit mobile number."); return; }
+  //   setIsLoading(true);
+  //   try {
+  //     await API.post("/user/request-otp/", { phone_number: clean });
+  //     setCustStep(2);
+  //     startResend();
+  //   } catch (err) {
+  //     const status = err?.response?.status;
+  //     const msg    = err?.response?.data?.error || "";
+  //     if (status === 404) setError("This number is not registered. Please sign up first.");
+  //     else                setError(msg || "Failed to send OTP. Please try again.");
+  //   } finally { setIsLoading(false); }
+  // };
 
-  // ══ SEND OTP — SIGN UP ════════════════════════════════════════════════════
-  const handleSignupSendOtp = async (e) => {
-    e.preventDefault();
-    setError("");
-    const clean = phone.replace(/\D/g, "");
-    if (!name.trim())        { setError("Please enter your full name."); return; }
-    if (clean.length < 10)   { setError("Please enter a valid 10-digit mobile number."); return; }
-    setIsLoading(true);
-    try {
-      await API.post("/user/request-otp-signup/", {
-        phone_number: clean,
-        name:         name.trim(),   // ← send name so backend can greet by name on WhatsApp
-      });
-      setCustStep(2);
-      startResend();
-    } catch (err) {
-      const msg = err?.response?.data?.error || "";
-      if (msg.toLowerCase().includes("already") || msg.toLowerCase().includes("registered customer"))
-        setError(msg);
-      else
-        setError(msg || "Failed to send OTP. Please try again.");
-    } finally { setIsLoading(false); }
-  };
+  // ══ SEND OTP — SIGN UP — kept for mobile API ══════════════════════════════
+  // const handleSignupSendOtp = async (e) => {
+  //   e.preventDefault();
+  //   setError("");
+  //   const clean = phone.replace(/\D/g, "");
+  //   if (!name.trim())        { setError("Please enter your full name."); return; }
+  //   if (clean.length < 10)   { setError("Please enter a valid 10-digit mobile number."); return; }
+  //   setIsLoading(true);
+  //   try {
+  //     await API.post("/user/request-otp-signup/", {
+  //       phone_number: clean,
+  //       name:         name.trim(),
+  //     });
+  //     setCustStep(2);
+  //     startResend();
+  //   } catch (err) {
+  //     const msg = err?.response?.data?.error || "";
+  //     if (msg.toLowerCase().includes("already") || msg.toLowerCase().includes("registered customer"))
+  //       setError(msg);
+  //     else
+  //       setError(msg || "Failed to send OTP. Please try again.");
+  //   } finally { setIsLoading(false); }
+  // };
 
-  // ══ RESEND OTP ════════════════════════════════════════════════════════════
-  const handleResend = async () => {
-    if (resendTimer > 0) return;
-    setError("");
-    setOtp(["", "", "", "", "", ""]);
-    setIsLoading(true);
-    const endpoint = custSubMode === "login" ? "/user/request-otp/" : "/user/request-otp-signup/";
-    try {
-      const payload = { phone_number: phone.replace(/\D/g, "") };
-      if (custSubMode === "signup") payload.name = name.trim();
-      await API.post(endpoint, payload);
-      startResend();
-    } catch (err) {
-      setError(err?.response?.data?.error || "Failed to resend OTP.");
-    } finally { setIsLoading(false); }
-  };
+  // ══ RESEND OTP — kept for mobile API ══════════════════════════════════════
+  // const handleResend = async () => {
+  //   if (resendTimer > 0) return;
+  //   setError("");
+  //   setOtp(["", "", "", "", "", ""]);
+  //   setIsLoading(true);
+  //   const endpoint = custSubMode === "login" ? "/user/request-otp/" : "/user/request-otp-signup/";
+  //   try {
+  //     const payload = { phone_number: phone.replace(/\D/g, "") };
+  //     if (custSubMode === "signup") payload.name = name.trim();
+  //     await API.post(endpoint, payload);
+  //     startResend();
+  //   } catch (err) {
+  //     setError(err?.response?.data?.error || "Failed to resend OTP.");
+  //   } finally { setIsLoading(false); }
+  // };
 
-  // ══ VERIFY OTP — LOGIN ════════════════════════════════════════════════════
-  const handleLoginVerifyOtp = async (e) => {
-    e.preventDefault();
-    setError("");
-    const otpVal = otp.join("");
-    if (otpVal.length < 6) { setError("Please enter the complete 6-digit OTP."); return; }
-    setIsLoading(true);
-    try {
-      const { data } = await API.post("/user/verify-otp/", {
-        phone_number: phone.replace(/\D/g, ""),
-        otp:          otpVal,
-      });
-      if (data.access && data.refresh) {
-        localStorage.setItem("access_token",  data.access);
-        localStorage.setItem("refresh_token", data.refresh);
-        const userData = { ...data.user, is_admin: false };
-        localStorage.setItem("user", JSON.stringify(userData));
-        onUserLogin(userData);
-        navigate("/user-dashboard");
-      }
-    } catch (err) {
-      const msg = err?.response?.data?.error || "";
-      if (msg.toLowerCase().includes("expired"))      setError("OTP expired. Please request a new one.");
-      else if (msg.toLowerCase().includes("invalid")) setError("Incorrect OTP. Please try again.");
-      else                                             setError(msg || "Verification failed. Please try again.");
-    } finally { setIsLoading(false); }
-  };
+  // ══ VERIFY OTP — LOGIN — kept for mobile API ══════════════════════════════
+  // const handleLoginVerifyOtp = async (e) => {
+  //   e.preventDefault();
+  //   setError("");
+  //   const otpVal = otp.join("");
+  //   if (otpVal.length < 6) { setError("Please enter the complete 6-digit OTP."); return; }
+  //   setIsLoading(true);
+  //   try {
+  //     const { data } = await API.post("/user/verify-otp/", {
+  //       phone_number: phone.replace(/\D/g, ""),
+  //       otp:          otpVal,
+  //     });
+  //     if (data.access && data.refresh) {
+  //       localStorage.setItem("access_token",  data.access);
+  //       localStorage.setItem("refresh_token", data.refresh);
+  //       const userData = { ...data.user, is_admin: false };
+  //       localStorage.setItem("user", JSON.stringify(userData));
+  //       onUserLogin(userData);
+  //       navigate("/user-dashboard");
+  //     }
+  //   } catch (err) {
+  //     const msg = err?.response?.data?.error || "";
+  //     if (msg.toLowerCase().includes("expired"))      setError("OTP expired. Please request a new one.");
+  //     else if (msg.toLowerCase().includes("invalid")) setError("Incorrect OTP. Please try again.");
+  //     else                                             setError(msg || "Verification failed. Please try again.");
+  //   } finally { setIsLoading(false); }
+  // };
 
-  // ══ VERIFY OTP — SIGN UP ══════════════════════════════════════════════════
-  const handleSignupVerifyOtp = async (e) => {
-    e.preventDefault();
-    setError("");
-    const otpVal = otp.join("");
-    if (otpVal.length < 6) { setError("Please enter the complete 6-digit OTP."); return; }
-    setIsLoading(true);
-    try {
-      const { data } = await API.post("/user/verify-otp-signup/", {
-        phone_number: phone.replace(/\D/g, ""),
-        otp:          otpVal,
-        name:         name.trim(),           // ← send name to save as business_name
-        email:        email.trim() || undefined,
-      });
-      if (data.access && data.refresh) {
-        localStorage.setItem("access_token",  data.access);
-        localStorage.setItem("refresh_token", data.refresh);
-        const userData = { ...data.user, is_admin: false };
-        localStorage.setItem("user", JSON.stringify(userData));
-        onUserLogin(userData);
-        navigate("/user-dashboard");
-      }
-    } catch (err) {
-      const msg = err?.response?.data?.error || "";
-      if (msg.toLowerCase().includes("expired"))      setError("OTP expired. Please request a new one.");
-      else if (msg.toLowerCase().includes("invalid")) setError("Incorrect OTP. Please try again.");
-      else                                             setError(msg || "Verification failed. Please try again.");
-    } finally { setIsLoading(false); }
-  };
+  // ══ VERIFY OTP — SIGN UP — kept for mobile API ════════════════════════════
+  // const handleSignupVerifyOtp = async (e) => {
+  //   e.preventDefault();
+  //   setError("");
+  //   const otpVal = otp.join("");
+  //   if (otpVal.length < 6) { setError("Please enter the complete 6-digit OTP."); return; }
+  //   setIsLoading(true);
+  //   try {
+  //     const { data } = await API.post("/user/verify-otp-signup/", {
+  //       phone_number: phone.replace(/\D/g, ""),
+  //       otp:          otpVal,
+  //       name:         name.trim(),
+  //       email:        email.trim() || undefined,
+  //     });
+  //     if (data.access && data.refresh) {
+  //       localStorage.setItem("access_token",  data.access);
+  //       localStorage.setItem("refresh_token", data.refresh);
+  //       const userData = { ...data.user, is_admin: false };
+  //       localStorage.setItem("user", JSON.stringify(userData));
+  //       onUserLogin(userData);
+  //       navigate("/user-dashboard");
+  //     }
+  //   } catch (err) {
+  //     const msg = err?.response?.data?.error || "";
+  //     if (msg.toLowerCase().includes("expired"))      setError("OTP expired. Please request a new one.");
+  //     else if (msg.toLowerCase().includes("invalid")) setError("Incorrect OTP. Please try again.");
+  //     else                                             setError(msg || "Verification failed. Please try again.");
+  //   } finally { setIsLoading(false); }
+  // };
 
-  // ══ OTP HANDLERS ══════════════════════════════════════════════════════════
-  const handleOtpChange = (i, e) => {
-    const val = e.target.value.replace(/\D/g, "");
-    if (!val) return;
-    const digit = val.slice(-1);
-    const next = [...otp];
-    next[i] = digit;
-    setOtp(next);
-    if (i < 5) otpRefs.current[i + 1]?.focus();
-    if (error) setError("");
-  };
+  // ══ OTP HANDLERS — kept for mobile API ════════════════════════════════════
+  // const handleOtpChange = (i, e) => {
+  //   const val = e.target.value.replace(/\D/g, "");
+  //   if (!val) return;
+  //   const digit = val.slice(-1);
+  //   const next = [...otp];
+  //   next[i] = digit;
+  //   setOtp(next);
+  //   if (i < 5) otpRefs.current[i + 1]?.focus();
+  //   if (error) setError("");
+  // };
+  //
+  // const handleOtpKey = (i, e) => {
+  //   if (e.key === "Backspace") {
+  //     e.preventDefault();
+  //     const next = [...otp];
+  //     if (otp[i]) {
+  //       next[i] = "";
+  //       setOtp(next);
+  //     } else if (i > 0) {
+  //       next[i - 1] = "";
+  //       setOtp(next);
+  //       otpRefs.current[i - 1]?.focus();
+  //     }
+  //   }
+  // };
+  //
+  // const handleOtpPaste = (e) => {
+  //   e.preventDefault();
+  //   const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+  //   const next = ["", "", "", "", "", ""];
+  //   pasted.split("").forEach((d, idx) => { next[idx] = d; });
+  //   setOtp(next);
+  //   otpRefs.current[Math.min(pasted.length, 5)]?.focus();
+  // };
 
-  const handleOtpKey = (i, e) => {
-    if (e.key === "Backspace") {
-      e.preventDefault();
-      const next = [...otp];
-      if (otp[i]) {
-        next[i] = "";
-        setOtp(next);
-      } else if (i > 0) {
-        next[i - 1] = "";
-        setOtp(next);
-        otpRefs.current[i - 1]?.focus();
-      }
-    }
-  };
-
-  const handleOtpPaste = (e) => {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    const next = ["", "", "", "", "", ""];
-    pasted.split("").forEach((d, idx) => { next[idx] = d; });
-    setOtp(next);
-    otpRefs.current[Math.min(pasted.length, 5)]?.focus();
-  };
-
-  // ── shared OtpStep props ──────────────────────────────────────────────────
-  const otpStepProps = {
-    otp, otpRefs, phone, error, isLoading, resendTimer,
-    onChange:  handleOtpChange,
-    onKeyDown: handleOtpKey,
-    onPaste:   handleOtpPaste,
-    onResend:  handleResend,
-    onBack:    () => { setCustStep(1); setError(""); setOtp(["","","","","",""]); },
-  };
+  // ── shared OtpStep props — kept for mobile API ────────────────────────────
+  // const otpStepProps = {
+  //   otp, otpRefs, phone, error, isLoading, resendTimer,
+  //   onChange:  handleOtpChange,
+  //   onKeyDown: handleOtpKey,
+  //   onPaste:   handleOtpPaste,
+  //   onResend:  handleResend,
+  //   onBack:    () => { setCustStep(1); setError(""); setOtp(["","","","","",""]); },
+  // };
 
   // ══════════════════════════════════════════════════════════════════════════
   return (
@@ -338,8 +341,8 @@ function Login({ onAdminLogin = () => {}, onUserLogin = () => {} }) {
 
         <div className="form-box">
 
-          {/* ── Top-level Tabs ── */}
-          <div className="mode-tabs">
+          {/* ── Top-level Tabs — web shows Admin only; Customer is mobile-app only ── */}
+          {/* <div className="mode-tabs">
             <button type="button"
               className={`mode-tab ${mode === "admin" ? "mode-tab--active" : ""}`}
               onClick={() => switchMode("admin")}>
@@ -350,7 +353,7 @@ function Login({ onAdminLogin = () => {}, onUserLogin = () => {} }) {
               onClick={() => switchMode("customer")}>
               Customer
             </button>
-          </div>
+          </div> */}
 
           {/* ════════ ADMIN ════════ */}
           {mode === "admin" && (
@@ -432,8 +435,8 @@ function Login({ onAdminLogin = () => {}, onUserLogin = () => {} }) {
             </>
           )}
 
-          {/* ════════ CUSTOMER ════════ */}
-          {mode === "customer" && (
+          {/* ════════ CUSTOMER — commented out for web UI; mobile app uses APIs directly ════════ */}
+          {/* {mode === "customer" && (
             <>
               <div className="badge-row">
                 <div className="badge badge--teal">
@@ -456,7 +459,6 @@ function Login({ onAdminLogin = () => {}, onUserLogin = () => {} }) {
                 </div>
               )}
 
-              {/* ── CUSTOMER LOGIN ── */}
               {custSubMode === "login" && custStep === 1 && (
                 <>
                   <h1 className="greeting">Welcome Back</h1>
@@ -500,7 +502,6 @@ function Login({ onAdminLogin = () => {}, onUserLogin = () => {} }) {
                 <OtpStep {...otpStepProps} onVerify={handleLoginVerifyOtp} />
               )}
 
-              {/* ── CUSTOMER SIGN UP ── */}
               {custSubMode === "signup" && custStep === 1 && (
                 <>
                   <h1 className="greeting">Create Account</h1>
@@ -508,8 +509,6 @@ function Login({ onAdminLogin = () => {}, onUserLogin = () => {} }) {
                   <ErrorBox msg={error} />
 
                   <form onSubmit={handleSignupSendOtp} noValidate>
-
-                    {/* ── Full Name ── */}
                     <div className={`field ${focusedField === "sname" ? "field--focused field--focused-teal" : ""} ${name ? "field--filled" : ""}`}>
                       <label htmlFor="signup-name">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -523,7 +522,6 @@ function Login({ onAdminLogin = () => {}, onUserLogin = () => {} }) {
                       <span className="field__bar field__bar--teal" />
                     </div>
 
-                    {/* ── Mobile Number ── */}
                     <div className={`field ${focusedField === "sphone" ? "field--focused field--focused-teal" : ""} ${phone ? "field--filled" : ""}`}>
                       <label htmlFor="signup-phone">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -541,7 +539,6 @@ function Login({ onAdminLogin = () => {}, onUserLogin = () => {} }) {
                       <span className="field__bar field__bar--teal" />
                     </div>
 
-                    {/* ── Email (optional) ── */}
                     <div className={`field ${focusedField === "semail" ? "field--focused field--focused-teal" : ""} ${email ? "field--filled" : ""}`}>
                       <label htmlFor="signup-email">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -576,7 +573,7 @@ function Login({ onAdminLogin = () => {}, onUserLogin = () => {} }) {
 
               <p className="form-footer">🔒 Secure customer access &nbsp;·&nbsp; VMART &copy; {new Date().getFullYear()}</p>
             </>
-          )}
+          )} */}
 
         </div>
       </div>

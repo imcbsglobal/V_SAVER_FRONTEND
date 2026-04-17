@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from './Adminsidebar';
-import './AdminCommonNotifications.scss';
+import './Admincommonnotifications.scss';
 import API from '../services/api';
 
 const EMOJI_PRESETS = [
