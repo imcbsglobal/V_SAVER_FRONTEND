@@ -1,10 +1,11 @@
 // ============================================================================
-// AdminDashboard.scss — Classic Elegant Theme + Full Mobile Responsive
+// AdminDashboard.scss — Matches OfferMaster / BranchMaster design system
+// Full mobile responsive — fixes duplicate header, clipped stats, table scroll
 // ============================================================================
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Lora:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-// ── Color Tokens
+// ── Color Tokens ─────────────────────────────────────────────────────────────
 $acn-primary:      #1a472a;
 $acn-secondary:    #d4a574;
 $acn-accent:       #c41e3a;
@@ -18,92 +19,88 @@ $acn-success:      #2d6a4f;
 $acn-warning:      #b5651d;
 $acn-danger:       #a4161a;
 
-// ── Shadows & Radii
-$shadow-card:   0 2px 8px rgba(0, 0, 0, 0.06);
-$shadow-raised: 0 4px 16px rgba(0, 0, 0, 0.09);
-$radius:        8px;
-$radius-lg:     12px;
+// ── Design System Tokens ─────────────────────────────────────────────────────
+$shadow-card:   0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+$shadow-raised: 0 4px 12px rgba(0, 0, 0, 0.10), 0 2px 4px rgba(0, 0, 0, 0.06);
+$radius:        3px;
+$radius-lg:     4px;
 
-// ──────────────────────────────────────────────────────────────────────────────
-// BASE
-// ──────────────────────────────────────────────────────────────────────────────
+$surface-0: #f4f5f7;
+$surface-1: #ffffff;
+$surface-2: #f8f9fa;
+$divider:   #dfe1e6;
 
+// ── Base Reset ────────────────────────────────────────────────────────────────
 *, *::before, *::after { box-sizing: border-box; }
 
+// ── Container ────────────────────────────────────────────────────────────────
 .admin-dashboard-container {
   display: flex;
   min-height: 100vh;
-  background: $acn-bg;
+  background: $surface-0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 14px;
+  font-size: 13px;
   color: $acn-text-dark;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// MAIN CONTENT
-// ──────────────────────────────────────────────────────────────────────────────
-
+// ── Main Content ─────────────────────────────────────────────────────────────
 .admin-main-content {
   flex: 1;
   min-width: 0;
-  transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+  transition: margin-left 0.2s ease;
 
-  &.sidebar-open  { margin-left: 240px; }
+  &.sidebar-open   { margin-left: 240px; }
   &.sidebar-closed { margin-left: 64px; }
 
-  @media (max-width: 767px) {
+  @media (max-width: 900px) {
     &.sidebar-open,
-    &.sidebar-closed { margin-left: 0 !important; }
+    &.sidebar-closed { margin-left: 0 !important; width: 100% !important; }
   }
 }
 
 .content-wrapper {
-  padding: 32px 40px;
+  padding: 20px 24px;
   max-width: 1440px;
   margin: 0 auto;
 
-  @media (max-width: 1024px) { padding: 28px 32px; }
-
-  // Mobile: remove all padding — sections handle their own horizontal padding
-  @media (max-width: 767px) { padding: 0 0 40px; }
+  @media (max-width: 1024px) { padding: 16px 20px; }
+  @media (max-width: 767px)  { padding: 0 0 24px; }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// DESKTOP PAGE HEADER
+// DESKTOP PAGE HEADER — hidden on mobile
 // ──────────────────────────────────────────────────────────────────────────────
-
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 32px;
-  flex-wrap: wrap;
+  align-items: baseline;
   gap: 16px;
-  animation: fadeIn 0.5s ease-out;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid $divider;
+  animation: fadeIn 0.25s ease-out;
 
-  // Hidden on mobile — .mobile-header takes over
-  @media (max-width: 767px) { display: none; }
+  @media (max-width: 767px) { display: none !important; }
 
   .header-left {
-    border-left: 4px solid $acn-secondary;
-    padding-left: 20px;
-
     .page-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 36px;
-      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      font-size: 20px;
+      font-weight: 600;
       color: $acn-text-dark;
-      margin: 0 0 6px;
-      letter-spacing: -0.5px;
-      line-height: 1.2;
+      margin: 0 0 2px;
+      letter-spacing: -0.2px;
+      line-height: 1.3;
     }
 
     .page-subtitle {
-      font-size: 14px;
-      color: $acn-text-light;
+      font-size: 12px;
+      color: $acn-text-lighter;
       margin: 0;
-      font-weight: 500;
+      font-weight: 400;
     }
   }
 
@@ -111,14 +108,12 @@ $radius-lg:     12px;
     display: flex;
     gap: 10px;
     align-items: center;
-    flex-wrap: wrap;
   }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// MOBILE PAGE HEADER (replaces desktop header on small screens)
+// MOBILE PAGE HEADER — shown only on mobile, replaces desktop header
 // ──────────────────────────────────────────────────────────────────────────────
-
 .mobile-header {
   // Hidden on desktop
   display: none;
@@ -126,32 +121,33 @@ $radius-lg:     12px;
   @media (max-width: 767px) {
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    padding: 20px 16px 16px;
-    background: $acn-card-bg;
-    border-bottom: 1px solid $acn-border;
-    margin-bottom: 16px;
+    gap: 10px;
+    padding: 14px 14px 12px;
+    background: $surface-1;
+    border-bottom: 2px solid $divider;
+    margin-bottom: 12px;
 
     &__text {
-      border-left: 4px solid $acn-secondary;
-      padding-left: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
     }
 
     &__title {
-      font-family: 'Playfair Display', serif;
-      font-size: 26px;
-      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      font-size: 17px;
+      font-weight: 600;
       color: $acn-text-dark;
-      margin: 0 0 4px;
-      letter-spacing: -0.3px;
-      line-height: 1.2;
+      margin: 0;
+      letter-spacing: -0.2px;
+      line-height: 1.3;
     }
 
     &__subtitle {
-      font-size: 13px;
-      color: $acn-text-light;
+      font-size: 11px;
+      color: $acn-text-lighter;
       margin: 0;
-      font-weight: 500;
+      font-weight: 400;
     }
 
     &__search {
@@ -159,6 +155,8 @@ $radius-lg:     12px;
 
       .search-input {
         width: 100% !important;
+        height: 32px !important;
+        font-size: 12px !important;
       }
     }
   }
@@ -167,7 +165,6 @@ $radius-lg:     12px;
 // ──────────────────────────────────────────────────────────────────────────────
 // SEARCH
 // ──────────────────────────────────────────────────────────────────────────────
-
 .search-wrapper {
   position: relative;
   display: flex;
@@ -175,30 +172,29 @@ $radius-lg:     12px;
 
   svg {
     position: absolute;
-    left: 11px;
+    left: 9px;
     pointer-events: none;
     z-index: 1;
-    width: 15px;
-    height: 15px;
+    width: 13px;
+    height: 13px;
     stroke: $acn-text-lighter;
   }
 
   .search-input {
-    padding: 0 14px 0 36px;
-    height: 40px;
-    border: 1.5px solid $acn-border;
+    padding: 0 10px 0 28px;
+    height: 32px;
+    border: 2px solid $divider;
     border-radius: $radius;
-    font-size: 13px;
-    width: 260px;
-    background: $acn-card-bg;
+    font-size: 12.5px;
+    width: 240px;
+    background: $surface-1;
     color: $acn-text-dark;
     font-family: 'Inter', sans-serif;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: border-color 0.1s ease;
 
     &:focus {
       outline: none;
-      border-color: $acn-secondary;
-      box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.12);
+      border-color: $acn-primary;
     }
 
     &::placeholder { color: $acn-text-lighter; }
@@ -206,148 +202,119 @@ $radius-lg:     12px;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// ADD USER BUTTON
+// STATS STRIP
 // ──────────────────────────────────────────────────────────────────────────────
-
-.add-user-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 0 20px;
-  height: 38px;
-  background: $acn-primary;
-  color: white;
-  border: none;
-  border-radius: $radius;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: 'Inter', sans-serif;
-  white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(26, 71, 42, 0.18);
-  transition: all 0.25s ease;
-
-  svg { width: 15px; height: 15px; flex-shrink: 0; }
-
-  &:hover {
-    background: #0f3a1e;
-    box-shadow: 0 4px 14px rgba(26, 71, 42, 0.28);
-    transform: translateY(-1px);
-  }
-  &:active { transform: translateY(0); }
-  &:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(26, 71, 42, 0.25); }
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// STAT CARDS
-// ──────────────────────────────────────────────────────────────────────────────
-
 .stats-container {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  margin-bottom: 28px;
-  animation: fadeInUp 0.5s ease-out 0.1s both;
+  gap: 8px;
+  margin-bottom: 16px;
+  animation: fadeIn 0.3s ease-out;
 
+  // Mobile: same 3-col grid but inside padded wrapper
   @media (max-width: 767px) {
-    padding: 0 16px;
-    gap: 10px;
-    margin-bottom: 20px;
+    padding: 0 14px;
+    gap: 6px;
+    margin-bottom: 12px;
   }
 
-  @media (max-width: 400px) {
-    gap: 8px;
-  }
+  @media (max-width: 360px) { gap: 5px; }
 
   .stat-card {
-    background: $acn-card-bg;
-    border: 1px solid $acn-border;
+    background: $surface-1;
+    border: 1px solid $divider;
     border-radius: $radius-lg;
-    padding: 18px 20px;
+    padding: 10px 14px;
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 10px;
     box-shadow: $shadow-card;
-    border-left: 4px solid transparent;
-    transition: all 0.25s ease;
+    border-top: 2px solid transparent;
+    transition: box-shadow 0.15s ease;
+    // Prevent any card from overflowing
+    min-width: 0;
     overflow: hidden;
 
-    &:hover { box-shadow: $shadow-raised; transform: translateY(-2px); }
+    &:hover { box-shadow: $shadow-raised; }
 
-    &.total    { border-left-color: $acn-secondary; }
-    &.active   { border-left-color: $acn-success; }
-    &.disabled { border-left-color: $acn-danger; }
+    &.total    { border-top-color: $acn-secondary; }
+    &.active   { border-top-color: $acn-success; }
+    &.disabled { border-top-color: $acn-danger; }
 
     .stat-icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 10px;
+      width: 32px;
+      height: 32px;
+      border-radius: $radius;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      svg { width: 20px; height: 20px; }
+
+      svg { width: 15px; height: 15px; }
     }
 
     &.total    .stat-icon { background: rgba(212, 165, 116, 0.12); svg { stroke: $acn-secondary; } }
-    &.active   .stat-icon { background: rgba(45, 106, 79, 0.10);   svg { stroke: $acn-success; }  }
-    &.disabled .stat-icon { background: rgba(164, 22, 26, 0.08);   svg { stroke: $acn-danger; }   }
+    &.active   .stat-icon { background: rgba(45, 106, 79, 0.10);   svg { stroke: $acn-success; } }
+    &.disabled .stat-icon { background: rgba(164, 22, 26, 0.08);   svg { stroke: $acn-danger; } }
 
     .stat-content {
       min-width: 0;
 
       .stat-value {
-        font-family: 'Playfair Display', serif;
-        font-size: 30px;
+        font-family: 'Inter', sans-serif;
+        font-size: 22px;
         font-weight: 700;
         color: $acn-text-dark;
         line-height: 1;
         letter-spacing: -0.5px;
-        margin-bottom: 5px;
+        margin-bottom: 2px;
       }
 
       .stat-label {
         font-size: 10px;
-        font-weight: 700;
+        font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.8px;
+        letter-spacing: 0.7px;
         color: $acn-text-lighter;
-        font-family: 'Inter', sans-serif;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
     }
 
-    // Tablet
+    // Tablet / small mobile
     @media (max-width: 767px) {
-      padding: 14px 12px 14px 14px;
-      gap: 10px;
-      border-radius: $radius;
+      padding: 8px 10px;
+      gap: 7px;
 
       .stat-icon {
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
-        svg { width: 16px; height: 16px; }
+        width: 28px;
+        height: 28px;
+        border-radius: $radius;
+        flex-shrink: 0;
+
+        svg { width: 13px; height: 13px; }
       }
 
       .stat-content {
-        .stat-value { font-size: 22px; margin-bottom: 3px; }
+        .stat-value { font-size: 18px; margin-bottom: 1px; }
         .stat-label { font-size: 9px; letter-spacing: 0.4px; }
       }
     }
 
-    // Small phones
-    @media (max-width: 380px) {
-      padding: 10px 8px 10px 12px;
-      gap: 8px;
+    // Very small phones
+    @media (max-width: 360px) {
+      padding: 7px 8px;
+      gap: 5px;
 
       .stat-icon {
-        width: 30px;
-        height: 30px;
-        svg { width: 14px; height: 14px; }
+        width: 24px;
+        height: 24px;
+        svg { width: 11px; height: 11px; }
       }
 
       .stat-content {
-        .stat-value { font-size: 18px; }
+        .stat-value { font-size: 15px; }
         .stat-label { font-size: 8px; letter-spacing: 0.2px; }
       }
     }
@@ -357,143 +324,137 @@ $radius-lg:     12px;
 // ──────────────────────────────────────────────────────────────────────────────
 // TABLE SECTION
 // ──────────────────────────────────────────────────────────────────────────────
-
 .table-section {
-  background: $acn-card-bg;
-  border: 1px solid $acn-border;
+  background: $surface-1;
+  border: 1px solid $divider;
   border-radius: $radius-lg;
   overflow: hidden;
   box-shadow: $shadow-card;
-  animation: fadeInUp 0.5s ease-out 0.2s both;
+  animation: fadeIn 0.3s ease-out;
 
   @media (max-width: 767px) {
-    margin: 0 16px;
-    border-radius: $radius;
+    margin: 0 14px;
+    border-radius: $radius-lg;
   }
 
   .table-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px 24px;
-    background: linear-gradient(135deg, rgba(26, 71, 42, 0.04) 0%, rgba(212, 165, 116, 0.02) 100%);
-    border-bottom: 1px solid $acn-border;
+    padding: 10px 16px;
+    background: $surface-2;
+    border-bottom: 2px solid $divider;
 
-    @media (max-width: 767px) { padding: 14px 16px; }
+    @media (max-width: 767px) { padding: 8px 12px; }
 
     .table-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 20px;
-      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
       color: $acn-text-dark;
       margin: 0;
       display: flex;
       align-items: center;
-      gap: 10px;
-      letter-spacing: -0.3px;
-
-      @media (max-width: 767px) { font-size: 17px; }
+      gap: 8px;
     }
 
     .count-badge {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 24px;
-      height: 24px;
-      padding: 0 8px;
-      background: rgba(212, 165, 116, 0.14);
-      color: $acn-warning;
+      min-width: 22px;
+      height: 20px;
+      padding: 0 7px;
+      background: $acn-primary;
+      color: white;
       border-radius: 20px;
       font-size: 11px;
       font-weight: 700;
-      border: 1px solid rgba(212, 165, 116, 0.28);
       font-family: 'Inter', sans-serif;
     }
   }
 
-  // CRITICAL: this wrapper must scroll horizontally on mobile
+  // ── Scroll wrapper: CRITICAL for mobile horizontal scroll
   .table-container {
     width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    // Show scroll hint on mobile
+
+    // Subtle shadow hints that table scrolls horizontally
     @media (max-width: 767px) {
-      // Subtle right-fade hint that table scrolls
-      background:
-        linear-gradient(to right, $acn-card-bg 0%, transparent 4%),
-        linear-gradient(to left, $acn-card-bg 0%, transparent 4%);
-      background-repeat: no-repeat;
-      background-size: 20px 100%, 20px 100%;
-      background-position: left center, right center;
+      position: relative;
+      &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 24px;
+        background: linear-gradient(to right, transparent, rgba($surface-1, 0.9));
+        pointer-events: none;
+      }
     }
   }
 
   .admin-table {
     width: 100%;
     border-collapse: collapse;
-    // CRITICAL: do NOT use table-layout: fixed on mobile —
-    // it allows columns to be fixed at explicit widths without shrinking.
-    // Instead we set explicit widths per class and let the table expand.
-    table-layout: fixed;
-    min-width: 520px; // Forces horizontal scroll before columns get crushed
+    font-size: 12.5px;
+    color: $acn-text-dark;
+    // Prevent columns from collapsing below their min-width
+    min-width: 520px;
 
-    // ── Column widths (desktop + mobile share same classes)
-    .col-num    { width: 52px;  text-align: center; }
-    .col-name   { width: auto;  min-width: 140px; }
-    .col-phone  { width: 140px; }
-    .col-status { width: 100px; }
+    // Column widths
+    .col-num    { width: 44px;  text-align: center; }
+    .col-name   { min-width: 150px; }
+    .col-phone  { width: 130px; }
+    .col-status { width: 90px;  }
     .col-date   { width: 110px; }
 
-    thead tr th {
-      padding: 11px 16px;
-      text-align: left;
-      font-size: 10px;
-      font-weight: 700;
-      color: $acn-primary;
-      text-transform: uppercase;
-      letter-spacing: 0.9px;
-      background: rgba(26, 71, 42, 0.03);
-      white-space: nowrap;
-      user-select: none;
-      border-bottom: 2px solid $acn-border;
-      border-right: 1px solid $acn-border;
-      font-family: 'Inter', sans-serif;
+    thead {
+      tr {
+        background: $surface-0;
+        border-bottom: 2px solid darken($divider, 8%);
+      }
 
-      &:last-child { border-right: none; }
+      th {
+        padding: 8px 14px;
+        text-align: left;
+        font-size: 10px;
+        font-weight: 700;
+        color: $acn-text-lighter;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        white-space: nowrap;
+        border-right: 1px solid $divider;
+        font-family: 'Inter', sans-serif;
 
-      &.col-num { text-align: center; }
+        &:last-child { border-right: none; }
+        &.col-num    { text-align: center; }
+      }
     }
 
     tbody {
       tr {
+        border-bottom: 1px solid $divider;
         transition: background 0.1s ease;
-        &:hover { background: rgba(212, 165, 116, 0.04); }
+
+        &:last-child { border-bottom: none; }
+        &:hover      { background: rgba(26, 71, 42, 0.03); }
 
         td {
-          padding: 13px 16px;
-          font-size: 13px;
-          color: $acn-text-dark;
+          padding: 9px 14px;
           vertical-align: middle;
-          border-bottom: 1px solid $acn-border;
-          border-right: 1px solid $acn-border;
+          border-right: 1px solid $divider;
 
           &:last-child { border-right: none; }
-
-          @media (max-width: 767px) {
-            padding: 11px 12px;
-            font-size: 12px;
-          }
         }
-
-        &:last-child td { border-bottom: none; }
       }
 
-      // State cells (loading / empty) — use a wrapper div for flex layout
-      // NOT display:flex on the td itself (breaks table rendering)
+      // Loading / empty state
       .state-cell {
         text-align: center;
-        padding: 56px 24px;
+        padding: 48px 24px;
         border-right: none !important;
 
         &__inner {
@@ -501,7 +462,7 @@ $radius-lg:     12px;
           align-items: center;
           gap: 10px;
           color: $acn-text-lighter;
-          font-size: 14px;
+          font-size: 13px;
         }
       }
     }
@@ -511,10 +472,9 @@ $radius-lg:     12px;
 // ──────────────────────────────────────────────────────────────────────────────
 // TABLE CELL VARIANTS
 // ──────────────────────────────────────────────────────────────────────────────
-
 .row-num {
   color: $acn-text-lighter;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   text-align: center;
 }
@@ -522,7 +482,7 @@ $radius-lg:     12px;
 .name-cell {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   font-weight: 500;
   overflow: hidden;
 
@@ -530,57 +490,28 @@ $radius-lg:     12px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-size: 12.5px;
   }
 
   .user-avatar {
-    width: 34px;
-    height: 34px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     flex-shrink: 0;
-    background: linear-gradient(135deg, $acn-primary 0%, rgba(26, 71, 42, 0.75) 100%);
-    color: white;
+    background: rgba(26, 71, 42, 0.10);
+    border: 1px solid rgba(26, 71, 42, 0.15);
+    color: $acn-primary;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     font-family: 'Inter', sans-serif;
-  }
-
-  @media (max-width: 767px) {
-    gap: 8px;
-    .user-avatar { width: 30px; height: 30px; font-size: 11px; }
-    span { font-size: 12px; }
-  }
-}
-
-.name-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-
-  .name-primary {
-    font-weight: 600;
-    color: $acn-text-dark;
-    font-size: 13px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .name-secondary {
-    font-size: 11px;
-    color: $acn-text-lighter;
-    font-family: 'Inter', sans-serif;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 }
 
 .date-cell {
-  font-size: 12px;
+  font-size: 11.5px;
   color: $acn-text-lighter;
   white-space: nowrap;
 }
@@ -588,65 +519,73 @@ $radius-lg:     12px;
 .status-badge {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
   white-space: nowrap;
+  text-transform: uppercase;
   font-family: 'Inter', sans-serif;
 
-  @media (max-width: 767px) {
-    padding: 3px 8px;
-    font-size: 10px;
+  &::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-right: 5px;
   }
 
   &.active {
     background: rgba(45, 106, 79, 0.10);
     color: $acn-success;
-    border: 1px solid rgba(45, 106, 79, 0.2);
+    border: 1px solid rgba(45, 106, 79, 0.18);
+    &::before { background: $acn-success; }
   }
 
   &.disable {
     background: rgba(164, 22, 26, 0.08);
     color: $acn-danger;
     border: 1px solid rgba(164, 22, 26, 0.15);
+    &::before { background: $acn-danger; }
   }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
 // LOADING SPINNER
 // ──────────────────────────────────────────────────────────────────────────────
-
 .loading-spinner {
   display: inline-block;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
   border: 2px solid rgba(26, 71, 42, 0.15);
   border-top-color: $acn-primary;
   border-radius: 50%;
-  animation: acn-spin 0.75s linear infinite;
+  animation: acnSpin 0.75s linear infinite;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
 // ANIMATIONS
 // ──────────────────────────────────────────────────────────────────────────────
-
-@keyframes acn-spin  { to { transform: rotate(360deg); } }
-@keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
-@keyframes fadeInUp  { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes acnSpin  { to { transform: rotate(360deg); } }
+@keyframes fadeIn   { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// SIDEBAR COLLAPSE
+// RESPONSIVE BREAKPOINTS
 // ──────────────────────────────────────────────────────────────────────────────
-
 @media (max-width: 1024px) {
-  .admin-main-content.sidebar-open   { margin-left: 240px; }
-  .admin-main-content.sidebar-closed { margin-left: 0; }
+  .admin-main-content {
+    &.sidebar-open   { margin-left: 240px; }
+    &.sidebar-closed { margin-left: 0; }
+  }
 }
 
-@media (max-width: 767px) {
-  .admin-main-content.sidebar-open,
-  .admin-main-content.sidebar-closed { margin-left: 0 !important; }
+@media (max-width: 900px) {
+  .admin-main-content {
+    &.sidebar-open,
+    &.sidebar-closed { margin-left: 0 !important; width: 100% !important; }
+  }
 }
