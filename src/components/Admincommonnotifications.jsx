@@ -1,48 +1,202 @@
 // ============================================================================
-// AdminCommonNotifications Component
-// Layout: form + live phone preview only (no table/list)
-// Mobile-optimized
+// AdminCommonNotifications Component - Redesigned
+// Classic, Elegant Notification Management
 // ============================================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import AdminSidebar from './Adminsidebar';
-import './Admincommonnotifications.scss';
+import './AdminCommonNotifications.scss';
 import API from '../services/api';
 
 const EMOJI_PRESETS = [
-  { label: 'Vishu 🌸',        title: 'Happy Vishu 🌸',       body: 'Wishing you a prosperous and joyful Vishu! May this new year bring happiness and abundance to you and your family. 🌼' },
-  { label: 'Onam 🌺',         title: 'Happy Onam 🌺',        body: 'Warmest Onam wishes to you and your family! May the spirit of Onam fill your home with joy and prosperity. 🌺' },
-  { label: 'Diwali 🪔',       title: 'Happy Diwali 🪔',      body: 'Wishing you a bright and beautiful Diwali! May this festival of lights bring happiness, peace, and prosperity to your home. ✨' },
-  { label: 'Christmas 🎄',    title: 'Merry Christmas 🎄',   body: "Season's greetings! Wishing you and your family a joyful Christmas filled with love, laughter, and warmth. 🎁" },
-  { label: 'New Year 🎆',     title: 'Happy New Year 🎆',    body: 'Wishing you a wonderful New Year! May the coming year be filled with new opportunities and happiness. 🥂' },
-  { label: 'Good Morning ☀️', title: 'Good Morning ☀️',      body: "Start your day with a smile! Check out today's best deals and offers just for you. Have a wonderful day! 😊" },
-  { label: 'Weekend 🛍️',     title: 'Weekend Special 🛍️',  body: "The weekend is here! Explore amazing deals and discounts available at your favourite stores. Don't miss out! 🎉" },
-  { label: 'Flash Sale ⚡',    title: 'Flash Sale ⚡',        body: "Limited time offer! Grab incredible discounts before they're gone. Shop now and save big! 🔥" },
+  { label: 'Flash Sale ⚡',     title: 'Flash Sale ⚡',              body: "Limited time offer! Grab incredible discounts before they're gone. Shop now and save big! 🔥" },
+  { label: 'New Offer 🎁',      title: 'New Offer Just Dropped 🎁',  body: 'A brand new offer is waiting for you! Check it out now and grab the best deals before they expire. 🛍️' },
+  { label: 'Limited Time ⏳',   title: 'Limited Time Deal ⏳',       body: "Hurry! This exclusive deal won't last long. Visit your nearest store and save big today. ⚡" },
+  { label: 'Weekend Deal 🛍️',  title: 'Weekend Special 🛍️',        body: "The weekend is here! Explore amazing deals and discounts available at your favourite stores. Don't miss out! 🎉" },
+  { label: 'Mega Sale 🔥',      title: 'Mega Sale Is Live 🔥',       body: 'Our biggest sale of the season is now live! Unbeatable prices across all categories. Shop now! 💥' },
+  { label: 'Clearance 🏷️',     title: 'Clearance Sale 🏷️',         body: 'Stock is running out fast! Grab clearance deals at the lowest prices before they are gone for good. 🚨' },
+  { label: 'Exclusive 👑',      title: 'Exclusive Member Offer 👑',  body: 'A special offer just for you! As a valued customer, enjoy exclusive discounts available for a limited time only. 🎀' },
+  { label: 'Back in Stock 📦',  title: 'Back in Stock 📦',           body: 'Your favourite products are back! Limited stock available — order now before it sells out again. 🛒' },
 ];
+
+function getMinDatetime() {
+  const d = new Date(Date.now() + 60000);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function toUTCISO(localStr) {
+  if (!localStr) return null;
+  return new Date(localStr).toISOString();
+}
+
+function formatScheduled(localStr) {
+  if (!localStr) return '';
+  return new Date(localStr).toLocaleString(undefined, {
+    weekday: 'short', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
+function formatDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString(undefined, {
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
+function timeAgo(iso) {
+  if (!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+// Icons
+function BellIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+  );
+}
+
+function PeopleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="14" height="14">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+  );
+}
+
+function StatusBadge({ status }) {
+  if (status === 'sent') {
+    return (
+      <span className="acn-badge acn-badge--sent">
+        <CheckIcon />
+        Sent
+      </span>
+    );
+  }
+  if (status === 'scheduled') {
+    return <span className="acn-badge acn-badge--scheduled">Scheduled</span>;
+  }
+  return <span className="acn-badge acn-badge--draft">Draft</span>;
+}
+
+function NotifCard({ n, onDelete, deleteId }) {
+  const isDeleting = deleteId === n.id;
+  const timeLabel = n.status === 'sent'
+    ? timeAgo(n.sent_at)
+    : n.scheduled_at
+      ? formatScheduled(n.scheduled_at)
+      : '—';
+
+  return (
+    <div className={`acn-notif-card ${n.status === 'scheduled' ? 'acn-notif-card--scheduled' : ''} ${n.status === 'sent' ? 'acn-notif-card--sent' : ''}`}>
+      <div className="acn-notif-card-bar">
+        <div className="acn-notif-card-approw">
+          <div className="acn-notif-card-appicon">
+            <BellIcon />
+          </div>
+          <span className="acn-notif-card-appname">Notification</span>
+          <span className="acn-notif-card-dot">·</span>
+          <span className="acn-notif-card-time">{timeLabel}</span>
+        </div>
+
+        <div className="acn-notif-card-actions">
+          {n.status === 'sent' && n.sent_at && (
+            <span className="acn-notif-card-sent-date">
+              Sent {formatDate(n.sent_at)}
+            </span>
+          )}
+          {n.status !== 'sent' && <StatusBadge status={n.status} />}
+          <button
+            className="acn-delete-btn"
+            onClick={() => onDelete(n.id)}
+            disabled={isDeleting}
+            title="Delete"
+          >
+            {isDeleting ? <span className="acn-spinner acn-spinner--red" /> : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-1 14H6L5 6"/>
+                <path d="M10 11v6M14 11v6"/>
+                <path d="M9 6V4h6v2"/>
+              </svg>
+            )}
+          </button>
+        </div>
+      </div>
+
+      <div className="acn-notif-card-body">
+        <div className="acn-notif-card-title">{n.title}</div>
+        {n.body && <div className="acn-notif-card-message">{n.body}</div>}
+      </div>
+
+      <div className="acn-notif-card-footer">
+        {n.status === 'sent' && (
+          <span className="acn-notif-card-devices">
+            <PeopleIcon />
+            {n.sent_count} devices reached
+          </span>
+        )}
+        {n.status === 'scheduled' && (
+          <span className="acn-notif-card-schedinfo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="13" height="13">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            Sends {formatScheduled(n.scheduled_at)}
+          </span>
+        )}
+        {n.status === 'sent' && n.sent_at && (
+          <span className="acn-notif-card-sentat">Sent {formatDate(n.sent_at)}</span>
+        )}
+      </div>
+    </div>
+  );
+}
 
 const AdminCommonNotifications = ({ onLogout, userData }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [adminName, setAdminName]         = useState('Admin');
+  const [adminName, setAdminName] = useState('Admin');
 
-  // ── Form state ─────────────────────────────────────────────────────────
-  const [formData, setFormData]       = useState({ title: '', body: '', image_url: '', target: 'all' });
+  const [formData, setFormData] = useState({ title: '', body: '', target: 'all' });
+  const [scheduledAt, setScheduledAt] = useState('');
   const [formLoading, setFormLoading] = useState(false);
 
-  // ── Alerts ─────────────────────────────────────────────────────────────
-  const [error, setError]                   = useState(null);
+  const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
-  // ── Sidebar: open on desktop, closed on mobile by default ──────────────
+  const [notifications, setNotifications] = useState([]);
+  const [listLoading, setListLoading] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+
   useEffect(() => {
-    const handleResize = () => {
-      setIsSidebarOpen(window.innerWidth >= 768);
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    const onResize = () => setIsSidebarOpen(window.innerWidth >= 768);
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // ── Effects ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (userData?.username) {
       setAdminName(userData.username);
@@ -62,50 +216,96 @@ const AdminCommonNotifications = ({ onLogout, userData }) => {
     }
   }, [error, successMessage]);
 
-  // ── Form helpers ───────────────────────────────────────────────────────
-  const handleInputChange = (e) => {
+  const fetchNotifications = useCallback(async () => {
+    setListLoading(true);
+    try {
+      const { data } = await API.get('/notifications/common/');
+      setNotifications(Array.isArray(data) ? data : (data.results || []));
+    } catch {
+      // silent fail
+    } finally {
+      setListLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
+  useEffect(() => {
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
+
+  const handleInputChange = e => {
     const { name, value } = e.target;
     setFormData(p => ({ ...p, [name]: value }));
   };
 
-  const applyPreset = (preset) => {
+  const applyPreset = preset => {
     setFormData(p => ({ ...p, title: preset.title, body: preset.body }));
   };
 
   const resetForm = () => {
-    setFormData({ title: '', body: '', image_url: '', target: 'all' });
+    setFormData({ title: '', body: '', target: 'all' });
+    setScheduledAt('');
   };
 
-  // ── Send Now: create + send immediately ───────────────────────────────
-  const handleCreateAndSend = async () => {
+  const isScheduled = !!scheduledAt;
+
+  const handleSubmit = async () => {
     if (!formData.title.trim()) { setError('Title is required.'); return; }
-    if (!formData.body.trim())  { setError('Message body is required.'); return; }
+    if (!formData.body.trim()) { setError('Message body is required.'); return; }
+
     setFormLoading(true);
     setError(null);
+
     try {
-      const { data } = await API.post('/notifications/common/', formData);
-      const notifId = data.id;
-      const res = await API.post(`/notifications/common/${notifId}/send/`);
-      setSuccessMessage(res.data.message || 'Notification sent successfully!');
+      const payload = {
+        ...formData,
+        scheduled_at: isScheduled ? toUTCISO(scheduledAt) : null,
+      };
+
+      const { data } = await API.post('/notifications/common/', payload);
+
+      if (!isScheduled) {
+        const res = await API.post(`/notifications/common/${data.id}/send/`);
+        setSuccessMessage(res.data.message || 'Notification sent successfully!');
+      } else {
+        setSuccessMessage(`Notification scheduled for ${formatScheduled(scheduledAt)} ✅`);
+      }
+
       resetForm();
+      fetchNotifications();
     } catch (err) {
       const d = err?.response?.data;
-      setError(typeof d === 'string' ? d : d?.error || d?.detail || 'Failed to send notification.');
+      if (d && typeof d === 'object') {
+        setError(Object.values(d).flat().join(' '));
+      } else {
+        setError(typeof d === 'string' ? d : 'Failed to process notification.');
+      }
     } finally {
       setFormLoading(false);
     }
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────
-  return (
-    <div className="cn-container">
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this notification?')) return;
+    setDeleteId(id);
+    try {
+      await API.delete(`/notifications/common/${id}/`);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    } catch {
+      setError('Failed to delete notification.');
+    } finally {
+      setDeleteId(null);
+    }
+  };
 
-      {/* Dark overlay behind sidebar on mobile */}
+  return (
+    <div className="acn-container">
       {isSidebarOpen && (
-        <div
-          className="cn-sidebar-overlay"
-          onClick={() => setIsSidebarOpen(false)}
-        />
+        <div className="acn-sidebar-overlay" onClick={() => setIsSidebarOpen(false)} />
       )}
 
       <AdminSidebar
@@ -115,277 +315,222 @@ const AdminCommonNotifications = ({ onLogout, userData }) => {
         adminName={adminName}
       />
 
-      <main className={`cn-main ${isSidebarOpen ? 'cn-sidebar-open' : 'cn-sidebar-closed'}`}>
-        <div className="cn-wrapper">
+      <main className={`acn-main ${isSidebarOpen ? 'acn-sidebar-open' : 'acn-sidebar-closed'}`}>
+        <div className="acn-wrapper">
 
-          {/* ── Mobile top bar (hamburger + page title) ── */}
-          <div className="cn-mobile-topbar">
-            <button
-              className="cn-hamburger"
-              onClick={() => setIsSidebarOpen(p => !p)}
-              aria-label="Toggle sidebar"
-            >
+          <div className="acn-mobile-topbar">
+            <button className="acn-hamburger" onClick={() => setIsSidebarOpen(p => !p)} aria-label="Toggle sidebar">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="3" y1="6"  x2="21" y2="6"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
                 <line x1="3" y1="12" x2="21" y2="12"/>
                 <line x1="3" y1="18" x2="21" y2="18"/>
               </svg>
             </button>
-            <span className="cn-mobile-title">Common Notifications</span>
+            <span className="acn-mobile-title">Notifications</span>
           </div>
 
-          {/* ── Page Header (desktop) ── */}
-          <div className="cn-page-header">
-            <h1 className="cn-page-title">Common Notifications</h1>
-            <p className="cn-page-sub">Create and send festive greetings &amp; announcements to all users</p>
+          <div className="acn-page-header">
+            <div className="acn-header-content">
+              <h1 className="acn-page-title">Notification Center</h1>
+              <p className="acn-page-sub">Create, schedule, and manage notifications sent to your users</p>
+            </div>
           </div>
 
-          {/* ── Alerts ── */}
           {error && (
-            <div className="cn-alert cn-alert-error">
+            <div className="acn-alert acn-alert-error">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="15" y1="9" x2="9" y2="15"/>
-                <line x1="9"  y1="9" x2="15" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
               </svg>
-              {error}
-              <button
-                onClick={() => setError(null)}
-                style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', lineHeight: 1 }}
-                title="Dismiss"
-              >✕</button>
+              <span>{error}</span>
+              <button onClick={() => setError(null)} className="acn-alert-close">×</button>
             </div>
           )}
+
           {successMessage && (
-            <div className="cn-alert cn-alert-success">
+            <div className="acn-alert acn-alert-success">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
-              {successMessage}
+              <span>{successMessage}</span>
             </div>
           )}
 
-          {/* ── Two-column: Form + Preview ── */}
-          <div className="cn-main-grid">
+          <div className="acn-form-card">
+            <div className="acn-card-header">
+              <div className="acn-card-header-content">
+                <h2 className="acn-card-title">Compose Notification</h2>
+                <p className="acn-card-sub">Send instantly or schedule for later</p>
+              </div>
+            </div>
 
-            {/* Left: Form card */}
-            <div className="cn-form-card">
-              <div className="cn-card-header">
-                <div className="cn-card-header-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                  </svg>
-                </div>
-                <div>
-                  <p className="cn-card-title">Create Notification</p>
-                  <p className="cn-card-sub">Compose and send to users instantly</p>
+            <div className="acn-form-body">
+
+              <div className="acn-preset-section">
+                <label className="acn-field-label">Quick Templates</label>
+                <div className="acn-presets-row">
+                  {EMOJI_PRESETS.map(p => (
+                    <button 
+                      key={p.label} 
+                      className="acn-preset-btn" 
+                      onClick={() => applyPreset(p)} 
+                      type="button" 
+                      disabled={formLoading}
+                      title={p.title}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              <div className="cn-form-body">
+              <div className="acn-field">
+                <label className="acn-field-label">Title <span className="acn-req">*</span></label>
+                <input
+                  className="acn-input"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  placeholder="Enter notification title"
+                  maxLength={255}
+                  disabled={formLoading}
+                />
+              </div>
 
-                {/* Quick presets */}
-                <div className="cn-preset-section">
-                  <span className="cn-field-label">Quick presets</span>
-                  <div className="cn-presets-row">
-                    {EMOJI_PRESETS.map(p => (
-                      <button
-                        key={p.label}
-                        className="cn-preset-btn"
-                        onClick={() => applyPreset(p)}
-                        type="button"
-                        disabled={formLoading}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+              <div className="acn-field">
+                <label className="acn-field-label">Message <span className="acn-req">*</span></label>
+                <textarea
+                  className="acn-textarea"
+                  name="body"
+                  value={formData.body}
+                  onChange={handleInputChange}
+                  placeholder="Enter notification message"
+                  rows={4}
+                  disabled={formLoading}
+                />
+              </div>
 
-                {/* Title */}
-                <div className="cn-field">
-                  <label className="cn-field-label">
-                    Title <span className="cn-req">*</span>
-                  </label>
-                  <input
-                    className="cn-input"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleInputChange}
-                    placeholder="e.g. Happy Vishu 🌸"
-                    maxLength={255}
-                    disabled={formLoading}
-                  />
-                </div>
-
-                {/* Message */}
-                <div className="cn-field">
-                  <label className="cn-field-label">
-                    Message <span className="cn-req">*</span>
-                  </label>
-                  <textarea
-                    className="cn-textarea"
-                    name="body"
-                    value={formData.body}
-                    onChange={handleInputChange}
-                    placeholder="Wishing you and your family a joyful and prosperous celebration! 🎉"
-                    rows={3}
-                    disabled={formLoading}
-                  />
-                </div>
-
-                {/* Send To + Image row */}
-                <div className="cn-grid-2">
-                  <div className="cn-field">
-                    <label className="cn-field-label">
-                      Send To <span className="cn-req">*</span>
-                    </label>
-                    <select
-                      className="cn-input"
-                      name="target"
-                      value={formData.target}
-                      onChange={handleInputChange}
-                      disabled={formLoading}
-                    >
-                      <option value="all">All Users</option>
-                      <option value="active">Active Users Only</option>
-                    </select>
-                  </div>
-
-                  <div className="cn-field">
-                    <label className="cn-field-label">
-                      Image <span className="cn-hint">(optional)</span>
-                    </label>
-                    <div className="cn-img-row">
-                      <input
-                        className="cn-input"
-                        name="image_url"
-                        value={formData.image_url}
-                        onChange={handleInputChange}
-                        placeholder="https://example.com/img.jpg"
-                        disabled={formLoading}
-                      />
-                      {formData.image_url ? (
-                        <img
-                          src={formData.image_url}
-                          alt="preview"
-                          className="cn-img-thumb"
-                          onError={e => { e.target.style.display = 'none'; }}
-                        />
-                      ) : (
-                        <div className="cn-img-placeholder">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <rect x="3" y="3" width="18" height="18" rx="2"/>
-                            <circle cx="8.5" cy="8.5" r="1.5"/>
-                            <polyline points="21 15 16 10 5 21"/>
-                          </svg>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="cn-form-actions">
-                  <button
-                    className="cn-btn-send-now"
-                    onClick={handleCreateAndSend}
+              <div className="acn-grid-2">
+                <div className="acn-field">
+                  <label className="acn-field-label">Send To <span className="acn-req">*</span></label>
+                  <select 
+                    className="acn-input" 
+                    name="target" 
+                    value={formData.target} 
+                    onChange={handleInputChange} 
                     disabled={formLoading}
                   >
-                    {formLoading ? (
-                      <>
-                        <span className="cn-spinner" />
-                        Sending…
-                      </>
-                    ) : (
-                      <>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <line x1="22" y1="2" x2="11" y2="13"/>
-                          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                        </svg>
-                        Send Now
-                      </>
-                    )}
-                  </button>
+                    <option value="all">All Users</option>
+                    <option value="active">Active Users Only</option>
+                  </select>
                 </div>
-
-              </div>
-            </div>
-
-            {/* Right: Live phone preview */}
-            <div className="cn-preview-panel">
-              <div className="cn-preview-card">
-                <div className="cn-card-header">
-                  <p className="cn-card-title">Live Preview</p>
-                </div>
-                <div className="cn-phone-wrap">
-                  <div className="cn-phone">
-
-                    {/* Status bar */}
-                    <div className="cn-phone-bar">
-                      <span>9:41</span>
-                      <div className="cn-phone-signals">
-                        <svg viewBox="0 0 20 12" width="16" height="12" fill="#555">
-                          <rect x="0"  y="6"  width="3" height="6" rx="1"/>
-                          <rect x="4"  y="4"  width="3" height="8" rx="1"/>
-                          <rect x="8"  y="2"  width="3" height="10" rx="1"/>
-                          <rect x="12" y="0"  width="3" height="12" rx="1"/>
-                        </svg>
-                        <svg viewBox="0 0 22 16" width="18" height="14" fill="none" stroke="#555" strokeWidth="2">
-                          <path d="M1 7C5 2.5 8.5 1 11 1s6 1.5 10 6"/>
-                          <path d="M4 10C6.5 7.5 8.7 6.5 11 6.5s4.5 1 7 3.5"/>
-                          <path d="M7.5 13C9 11.5 10 11 11 11s2 .5 3.5 2"/>
-                          <circle cx="11" cy="15" r="1" fill="#555" stroke="none"/>
-                        </svg>
-                        <svg viewBox="0 0 25 12" width="20" height="12" fill="none">
-                          <rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="#555"/>
-                          <rect x="2" y="2" width="16" height="8" rx="2" fill="#555"/>
-                          <path d="M23 4v4a2 2 0 0 0 0-4z" fill="#555"/>
-                        </svg>
-                      </div>
-                    </div>
-
-                    {/* Notification bubble */}
-                    <div className="cn-phone-notif">
-                      <div className="cn-phone-notif-head">
-                        <div className="cn-phone-app-icon">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
-                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                          </svg>
-                        </div>
-                        <span className="cn-phone-app-name">App</span>
-                        <span className="cn-phone-time">just now</span>
-                      </div>
-                      <div className="cn-phone-notif-title">
-                        {formData.title || 'Notification Title'}
-                      </div>
-                      <div className="cn-phone-notif-body">
-                        {formData.body || 'Your message will appear here.'}
-                      </div>
-                      {formData.image_url && (
-                        <img
-                          src={formData.image_url}
-                          alt=""
-                          className="cn-phone-notif-img"
-                          onError={e => { e.target.style.display = 'none'; }}
-                        />
-                      )}
-                    </div>
-
-                    <div className="cn-phone-footer">Swipe to dismiss</div>
-                  </div>
+                <div className="acn-field">
+                  <label className="acn-field-label">Schedule <span className="acn-hint">(optional)</span></label>
+                  <input
+                    type="datetime-local"
+                    className="acn-input"
+                    min={getMinDatetime()}
+                    value={scheduledAt}
+                    onChange={e => setScheduledAt(e.target.value)}
+                    disabled={formLoading}
+                  />
                 </div>
               </div>
-            </div>
 
+              {scheduledAt && (
+                <div className="acn-schedule-preview">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  <div>Scheduled for <strong>{formatScheduled(scheduledAt)}</strong></div>
+                </div>
+              )}
+
+              <div className="acn-form-actions">
+                <button
+                  className={`acn-btn-submit ${isScheduled ? 'acn-btn-submit--schedule' : ''}`}
+                  onClick={handleSubmit}
+                  disabled={formLoading}
+                >
+                  {formLoading ? (
+                    <><span className="acn-spinner" />{isScheduled ? 'Scheduling…' : 'Sending…'}</>
+                  ) : isScheduled ? (
+                    <>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                      </svg>
+                      Schedule Notification
+                    </>
+                  ) : (
+                    <>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <line x1="22" y1="2" x2="11" y2="13"/>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                      </svg>
+                      Send Now
+                    </>
+                  )}
+                </button>
+              </div>
+
+            </div>
           </div>
-          {/* ── End two-column ── */}
+
+          <div className="acn-history-section">
+            <div className="acn-history-header">
+              <div>
+                <h2 className="acn-history-title">History</h2>
+                <p className="acn-history-sub">Auto-refreshes every 30 seconds</p>
+              </div>
+              <button 
+                className="acn-refresh-btn" 
+                onClick={fetchNotifications} 
+                disabled={listLoading}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={listLoading ? 'acn-spin' : ''}>
+                  <polyline points="23 4 23 10 17 10"/>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                </svg>
+                Refresh
+              </button>
+            </div>
+
+            {listLoading && notifications.length === 0 ? (
+              <div className="acn-history-empty">
+                <span className="acn-spinner acn-spinner--dark" />
+                <span>Loading notifications…</span>
+              </div>
+            ) : notifications.length === 0 ? (
+              <div className="acn-history-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                <span>No notifications yet</span>
+              </div>
+            ) : (
+              <div className="acn-notif-cards-list">
+                {notifications.map(n => (
+                  <NotifCard
+                    key={n.id}
+                    n={n}
+                    onDelete={handleDelete}
+                    deleteId={deleteId}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
 
         </div>
       </main>
-
     </div>
   );
 };

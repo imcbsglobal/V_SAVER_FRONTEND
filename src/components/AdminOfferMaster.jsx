@@ -31,6 +31,7 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
   const [error, setError]                       = useState(null);
   const [successMessage, setSuccessMessage]     = useState(null);
   const [tableSearch, setTableSearch]           = useState('');
+  const [statusFilter, setStatusFilter]         = useState('all');
   const [currentPage, setCurrentPage]           = useState(1);
   const [mediaModal, setMediaModal]             = useState(null);
   const [qrModal, setQrModal]                   = useState(null); // { offerTitle, branches }
@@ -349,6 +350,8 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
 
   const filteredOffers = offers.filter(o => {
     const q = tableSearch.toLowerCase();
+    const cs = o.computed_status || o.status;
+    if (statusFilter !== 'all' && cs !== statusFilter) return false;
     if (!q) return true;
     return (
       o.title?.toLowerCase().includes(q) ||
@@ -365,6 +368,7 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
   const paginatedOffers = filteredOffers.slice((currentPage-1)*ROWS_PER_PAGE, currentPage*ROWS_PER_PAGE);
 
   const handleTableSearch = (e) => { setTableSearch(e.target.value); setCurrentPage(1); };
+  const handleStatusFilter = (val) => { setStatusFilter(val); setCurrentPage(1); };
 
   // ── 12-hour time helpers ──────────────────────────────────────────────────
   // Convert "HH:MM" (24h) → { hour, minute, ampm }
@@ -882,6 +886,23 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
                 </h2>
               </div>
               <div className="om-toolbar-right">
+                {/* ── Status Filter Pills ── */}
+                <div className="om-status-filters">
+                  {[
+                    { value: 'all',       label: 'All' },
+                    { value: 'active',    label: '● Active' },
+                    { value: 'inactive',  label: '● Inactive' },
+                    { value: 'scheduled', label: '⏳ Scheduled' },
+                  ].map(f => (
+                    <button
+                      key={f.value}
+                      className={`om-filter-pill om-filter-pill-${f.value}${statusFilter === f.value ? ' om-filter-pill-active' : ''}`}
+                      onClick={() => handleStatusFilter(f.value)}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
                 <div className="om-search-box">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="11" cy="11" r="8"/>
@@ -909,7 +930,7 @@ const AdminOfferMaster = ({ onLogout, userData }) => {
                   <line x1="12" y1="8" x2="12" y2="12"/>
                   <line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
-                <p>{tableSearch ? 'No offers match your search.' : 'No offers created yet.'}</p>
+                <p>{tableSearch || statusFilter !== 'all' ? 'No offers match your search or filter.' : 'No offers created yet.'}</p>
               </div>
             ) : (
               <>

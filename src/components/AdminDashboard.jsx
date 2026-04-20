@@ -1,20 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
 import API from "../services/api";
 import AdminSidebar from "./Adminsidebar";
 import "./AdminDashboard.scss";
 
 /* ─── Icons ─── */
-const CloseIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-);
-const PlusIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-  </svg>
-);
 const SearchIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -40,49 +29,42 @@ const BlockIcon = () => (
   </svg>
 );
 
-/* ─── Mirrors UserDashboard.jsx helpers exactly ─── */
-const cleanDebtorName = (raw = "") =>
-  raw.replace(/\d{8,}$/, "").trim();
+/* ─── Helpers ─── */
+const cleanDebtorName = (raw = "") => raw.replace(/\d{8,}$/, "").trim();
 
 const resolveDisplayName = (user) => {
   if (!user) return "—";
-  if (user.debtor_name) return cleanDebtorName(user.debtor_name);
-  if (user.business_name) return user.business_name;
+  if (user.business_name) return cleanDebtorName(user.business_name);
+  if (user.shop_name) return user.shop_name;
   const full = [user.first_name, user.last_name].filter(Boolean).join(" ");
   if (full) return full;
-  if (user.shop_name) return user.shop_name;
   return user.username || "—";
 };
 
-const DEBTOR_API = `/debtors/`;
+const formatDate = (iso) => {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString(undefined, {
+    day: "2-digit", month: "short", year: "numeric",
+  });
+};
 
 /* ════════════════════════════════════════════════════════════════ */
 const AdminDashboard = ({ onLogout, userData }) => {
-  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [admins, setAdmins] = useState([]);
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   const [adminName, setAdminName] = useState("Admin");
   const [stats, setStats] = useState({ total_admins: 0, active_admins: 0, disabled_admins: 0 });
 
-  /* ── Debtor autocomplete state ── */
-  const [debtors, setDebtors] = useState([]);
-  const [debtorSearch, setDebtorSearch] = useState("");
-  const [debtorSuggestions, setDebtorSuggestions] = useState([]);
-  const [debtorLoading, setDebtorLoading] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const debtorNextUrl = useRef(null);
-  const debtorSearchTimeout = useRef(null);
-  const suggestionsRef = useRef(null);
-
-  const [newAdmin, setNewAdmin] = useState({
-    username: "",
-    password: "",
-    phone_number: "",
-    shop_name: "",
-  });
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth < 768) setIsSidebarOpen(false);
+    };
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   useEffect(() => {
     if (userData?.username) setAdminName(userData.username);
@@ -93,66 +75,10 @@ const AdminDashboard = ({ onLogout, userData }) => {
         setAdminName(p.username || p.email || "Admin");
       }
     }
-    fetchAdmins();
+    fetchUsers();
     fetchStats();
   }, [userData]);
 
-  /* ── Click outside to close suggestions ── */
-  useEffect(() => {
-    const handler = (e) => {
-      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  /* ─── Debtor search (live) ─── */
-  const searchDebtors = async (query) => {
-    if (!query || query.length < 2) {
-      setDebtorSuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
-    setDebtorLoading(true);
-    try {
-      const res = await API.get(`${DEBTOR_API}?search=${encodeURIComponent(query)}&page_size=15`);
-      const results = res.data?.results || [];
-      setDebtorSuggestions(results);
-      setShowSuggestions(true);
-    } catch {
-      const filtered = debtors.filter((d) =>
-        cleanDebtorName(d.name).toLowerCase().includes(query.toLowerCase())
-      );
-      setDebtorSuggestions(filtered.slice(0, 15));
-      setShowSuggestions(filtered.length > 0);
-    } finally {
-      setDebtorLoading(false);
-    }
-  };
-
-  const handleDebtorInput = (val) => {
-    setDebtorSearch(val);
-    clearTimeout(debtorSearchTimeout.current);
-    debtorSearchTimeout.current = setTimeout(() => searchDebtors(val), 300);
-  };
-
-  const selectDebtor = (debtor) => {
-    const name = cleanDebtorName(debtor.name);
-    setDebtorSearch(name);
-    setNewAdmin((prev) => ({
-      ...prev,
-      username: debtor.code || prev.username,
-      phone_number: debtor.phone2 || prev.phone_number,
-      shop_name: name,
-      location: debtor.place || prev.location || "",
-    }));
-    setShowSuggestions(false);
-    setDebtorSuggestions([]);
-  };
-
-  /* ─── API calls ─── */
   const fetchStats = async () => {
     try {
       const res = await API.get(`/admins/stats/`);
@@ -160,15 +86,16 @@ const AdminDashboard = ({ onLogout, userData }) => {
     } catch {}
   };
 
-  const fetchAdmins = async () => {
+  const fetchUsers = async () => {
     setLoading(true);
     try {
       const res = await API.get(`/admins/`);
-      setAdmins(res.data);
+      const data = Array.isArray(res.data) ? res.data : (res.data.results || []);
+      setUsers(data);
       setStats({
-        total_admins: res.data.length,
-        active_admins: res.data.filter((a) => a.status === "Active").length,
-        disabled_admins: res.data.filter((a) => a.status === "Disable").length,
+        total_admins:    data.length,
+        active_admins:   data.filter((u) => u.status === "Active").length,
+        disabled_admins: data.filter((u) => u.status === "Disable").length,
       });
     } catch {
       alert("Failed to fetch users");
@@ -177,34 +104,14 @@ const AdminDashboard = ({ onLogout, userData }) => {
     }
   };
 
-  const addAdmin = async () => {
-    if (!newAdmin.username || !newAdmin.password) {
-      alert("Please fill in Username and Password.");
-      return;
-    }
-    try {
-      await API.post(`/admins/`, newAdmin);
-      fetchAdmins(); fetchStats();
-      setShowAddForm(false);
-      resetNewAdmin();
-    } catch (err) {
-      const msg = err?.response?.data?.detail || err?.response?.data?.error || "Failed to add user";
-      alert(`❌ ${msg}`);
-    }
-  };
-
-  const resetNewAdmin = () => {
-    setNewAdmin({ username: "", password: "", phone_number: "", shop_name: "" });
-    setDebtorSearch("");
-    setDebtorSuggestions([]);
-  };
-
-  const filteredAdmins = admins.filter((a) => {
+  const filteredUsers = users.filter((u) => {
     const term = searchTerm.toLowerCase();
     return (
-      resolveDisplayName(a).toLowerCase().includes(term) ||
-      a.username?.toLowerCase().includes(term) ||
-      a.phone_number?.toLowerCase().includes(term)
+      resolveDisplayName(u).toLowerCase().includes(term) ||
+      u.username?.toLowerCase().includes(term) ||
+      u.phone_number?.toLowerCase().includes(term) ||
+      u.location?.toLowerCase().includes(term) ||
+      u.business_name?.toLowerCase().includes(term)
     );
   });
 
@@ -221,25 +128,39 @@ const AdminDashboard = ({ onLogout, userData }) => {
       <main className={`admin-main-content ${isSidebarOpen ? "sidebar-open" : "sidebar-closed"}`}>
         <div className="content-wrapper">
 
-          {/* ── Page Header ── */}
+          {/* ── Desktop Page Header — hidden on mobile via CSS ── */}
           <div className="page-header">
             <div className="header-left">
               <h1 className="page-title">User Management</h1>
-              <p className="page-subtitle">Manage and monitor all business users</p>
+              <p className="page-subtitle">All registered and signed-up users</p>
             </div>
             <div className="header-actions">
               <div className="search-wrapper">
                 <SearchIcon />
                 <input
                   className="search-input"
-                  placeholder="Search users..."
+                  placeholder="Search by name, phone, location..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <button className="add-user-btn" onClick={() => setShowAddForm(true)}>
-                <PlusIcon /> Add User
-              </button>
+            </div>
+          </div>
+
+          {/* ── Mobile Page Header — shown only on mobile via CSS ── */}
+          <div className="mobile-header">
+            <div className="mobile-header__text">
+              <h1 className="mobile-header__title">User Management</h1>
+              <p className="mobile-header__subtitle">All registered and signed-up users</p>
+            </div>
+            <div className="search-wrapper mobile-header__search">
+              <SearchIcon />
+              <input
+                className="search-input"
+                placeholder="Search users..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
           </div>
 
@@ -268,50 +189,61 @@ const AdminDashboard = ({ onLogout, userData }) => {
             </div>
           </div>
 
-          {/* ── Mobile-only: Search + Add User ── */}
-          <div className="table-controls--mobile">
-            <div className="search-wrapper">
-              <SearchIcon />
-              <input
-                className="search-input"
-                placeholder="Search users..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <button className="add-user-btn" onClick={() => setShowAddForm(true)}>
-              <PlusIcon /> Add User
-            </button>
-          </div>
-
           {/* ── Table ── */}
           <div className="table-section">
             <div className="table-header">
-              <h2 className="table-title">All Users <span className="count-badge">{filteredAdmins.length}</span></h2>
+              <h2 className="table-title">
+                All Users <span className="count-badge">{filteredUsers.length}</span>
+              </h2>
             </div>
+
+            {/* Scrollable wrapper — key for mobile horizontal scroll */}
             <div className="table-container">
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>#</th>
-                    <th>Name</th>
-                    <th>Phone</th>
+                    <th className="col-num">#</th>
+                    <th className="col-name">Name</th>
+                    <th className="col-phone">Phone</th>
+                    <th className="col-status">Status</th>
+                    <th className="col-date">Joined</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr><td colSpan="3" className="loading-cell"><div className="loading-spinner" /> Loading...</td></tr>
-                  ) : filteredAdmins.length === 0 ? (
-                    <tr><td colSpan="3" className="empty-cell">No users found</td></tr>
+                    <tr>
+                      <td colSpan="5" className="state-cell">
+                        <div className="state-cell__inner">
+                          <div className="loading-spinner" />
+                          <span>Loading...</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="state-cell">
+                        <div className="state-cell__inner">No users found</div>
+                      </td>
+                    </tr>
                   ) : (
-                    filteredAdmins.map((u, i) => (
+                    filteredUsers.map((u, i) => (
                       <tr key={u.id}>
-                        <td className="row-num">{i + 1}</td>
-                        <td className="name-cell">
-                          <div className="user-avatar">{resolveDisplayName(u)[0].toUpperCase()}</div>
+                        <td className="col-num row-num">{i + 1}</td>
+                        <td className="col-name name-cell">
+                          <div className="user-avatar">
+                            {resolveDisplayName(u)[0]?.toUpperCase() || "?"}
+                          </div>
                           <span>{resolveDisplayName(u)}</span>
                         </td>
-                        <td>{u.phone_number || "—"}</td>
+                        <td className="col-phone">{u.phone_number || "—"}</td>
+                        <td className="col-status">
+                          <span className={`status-badge ${u.status === "Active" ? "active" : "disable"}`}>
+                            {u.status || "—"}
+                          </span>
+                        </td>
+                        <td className="col-date date-cell">
+                          {formatDate(u.created_date || u.date_joined)}
+                        </td>
                       </tr>
                     ))
                   )}
@@ -319,105 +251,9 @@ const AdminDashboard = ({ onLogout, userData }) => {
               </table>
             </div>
           </div>
+
         </div>
       </main>
-
-      {/* ═══════════ ADD USER MODAL ═══════════ */}
-      {showAddForm && (
-        <div className="modal-overlay" onClick={() => { setShowAddForm(false); resetNewAdmin(); }}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 className="modal-title">Add New User</h2>
-              <button className="modal-close" onClick={() => { setShowAddForm(false); resetNewAdmin(); }}><CloseIcon /></button>
-            </div>
-
-            <div className="modal-body">
-              <div className="form-grid">
-
-                {/* ── Debtor Name Search (autocomplete) ── */}
-                <div className="form-field full-width" ref={suggestionsRef}>
-                  <label>Search Customer Name <span className="label-hint">(from Misel)</span></label>
-                  <div className="debtor-search-wrapper">
-                    <input
-                      type="text"
-                      className="debtor-input"
-                      placeholder="Type name to search..."
-                      value={debtorSearch}
-                      onChange={(e) => handleDebtorInput(e.target.value)}
-                      onFocus={() => debtorSuggestions.length > 0 && setShowSuggestions(true)}
-                      autoComplete="off"
-                    />
-                    {debtorLoading && <div className="debtor-spinner" />}
-                    {showSuggestions && debtorSuggestions.length > 0 && (
-                      <ul className="debtor-suggestions">
-                        {debtorSuggestions.map((d, idx) => (
-                          <li key={idx} onMouseDown={() => selectDebtor(d)} className="suggestion-item">
-                            <span className="sug-name">{cleanDebtorName(d.name)}</span>
-                            <span className="sug-meta">{d.place || ""} {d.phone2 ? `· ${d.phone2}` : ""}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                  <p className="field-hint">Selecting a customer will auto-fill username, phone & shop name.</p>
-                </div>
-
-                {/* ── Shop Name ── */}
-                <div className="form-field">
-                  <label>Shop / Business Name</label>
-                  <input
-                    type="text"
-                    value={newAdmin.shop_name}
-                    onChange={(e) => setNewAdmin({ ...newAdmin, shop_name: e.target.value })}
-                    placeholder="Shop name"
-                  />
-                </div>
-
-                {/* ── Username ── */}
-                <div className="form-field">
-                  <label>Username <span className="required">*</span></label>
-                  <input
-                    type="text"
-                    value={newAdmin.username}
-                    onChange={(e) => setNewAdmin({ ...newAdmin, username: e.target.value })}
-                    placeholder="e.g. john_doe"
-                    required
-                  />
-                </div>
-
-                {/* ── Password ── */}
-                <div className="form-field">
-                  <label>Password <span className="required">*</span></label>
-                  <input
-                    type="password"
-                    value={newAdmin.password}
-                    onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })}
-                    placeholder="••••••••"
-                    required
-                  />
-                </div>
-
-                {/* ── Phone ── */}
-                <div className="form-field">
-                  <label>Phone Number</label>
-                  <input
-                    type="tel"
-                    value={newAdmin.phone_number}
-                    onChange={(e) => setNewAdmin({ ...newAdmin, phone_number: e.target.value })}
-                    placeholder="+91 XXXXX XXXXX"
-                  />
-                </div>
-
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button className="cancel-btn" onClick={() => { setShowAddForm(false); resetNewAdmin(); }}>Cancel</button>
-              <button className="submit-btn" onClick={addAdmin}>Add User</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
