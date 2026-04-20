@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from './Adminsidebar';
-import './AdminBranchMaster.scss';
+import './Adminbranchmaster.scss';
 import API from '../services/api';
 
 const ROWS_PER_PAGE = 8;
