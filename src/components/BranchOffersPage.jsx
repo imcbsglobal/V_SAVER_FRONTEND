@@ -1,10 +1,12 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import './BranchOffersPage.scss';
+import './Branchofferspage.scss';
 import vmartLogo from '../assets/VMART.jpg';
 import { PUBLIC_API } from '../services/api';
 
 // ── Icons ─────────────────────────────────────────────────────────────
+// 
+// 
 const CalendarIcon = ({ size = 12 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="4" width="18" height="18" rx="2"/>
