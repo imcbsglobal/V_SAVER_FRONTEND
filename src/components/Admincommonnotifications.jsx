@@ -3,7 +3,7 @@
 // Classic, Elegant Notification Management
 // ============================================================================
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import AdminSidebar from './Adminsidebar';
 import './Admincommonnotifications.scss';
 import API from '../services/api';
@@ -109,6 +109,10 @@ function NotifCard({ n, onDelete, deleteId }) {
       ? formatScheduled(n.scheduled_at)
       : '—';
 
+  // Resolve image — prefer resolved_image_url (file upload), fall back to image_url (URL string)
+  // Both are checked so the card works even before the image migration is applied
+  const displayImage = n.resolved_image_url || n.image_url || null;
+
   return (
     <div className={`acn-notif-card ${n.status === 'scheduled' ? 'acn-notif-card--scheduled' : ''} ${n.status === 'sent' ? 'acn-notif-card--sent' : ''}`}>
       <div className="acn-notif-card-bar">
@@ -147,8 +151,23 @@ function NotifCard({ n, onDelete, deleteId }) {
       </div>
 
       <div className="acn-notif-card-body">
-        <div className="acn-notif-card-title">{n.title}</div>
-        {n.body && <div className="acn-notif-card-message">{n.body}</div>}
+        <div className="acn-notif-card-content-row">
+          <div className="acn-notif-card-text">
+            <div className="acn-notif-card-title">{n.title}</div>
+            {n.body && <div className="acn-notif-card-message">{n.body}</div>}
+          </div>
+          {/* Shows image from file upload (resolved_image_url) or URL string (image_url) */}
+          {displayImage && (
+            <div className="acn-notif-card-image-wrap">
+              <img
+                src={displayImage}
+                alt="Notification"
+                className="acn-notif-card-image"
+                onError={e => { e.target.style.display = 'none'; }}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="acn-notif-card-footer">
@@ -182,6 +201,14 @@ const AdminCommonNotifications = ({ onLogout, userData }) => {
   const [formData, setFormData] = useState({ title: '', body: '', target: 'all' });
   const [scheduledAt, setScheduledAt] = useState('');
   const [formLoading, setFormLoading] = useState(false);
+
+  // ── Image state ──────────────────────────────────────────────────────────────
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageUploadMode, setImageUploadMode] = useState('file'); // 'file' | 'url'
+  const [imageUrl, setImageUrl] = useState('');
+  const imageInputRef = useRef(null);
+  // ─────────────────────────────────────────────────────────────────────────────
 
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
@@ -220,9 +247,17 @@ const AdminCommonNotifications = ({ onLogout, userData }) => {
     setListLoading(true);
     try {
       const { data } = await API.get('/notifications/common/');
-      setNotifications(Array.isArray(data) ? data : (data.results || []));
-    } catch {
-      // silent fail
+      const list = Array.isArray(data) ? data : (data.results || []);
+      // Debug: log first item to verify image fields are coming through
+      if (list.length > 0) {
+        console.log('[Notifications] Sample item image fields:', {
+          resolved_image_url: list[0].resolved_image_url,
+          image_url: list[0].image_url,
+        });
+      }
+      setNotifications(list);
+    } catch (err) {
+      console.error('[Notifications] Fetch error:', err);
     } finally {
       setListLoading(false);
     }
@@ -246,9 +281,37 @@ const AdminCommonNotifications = ({ onLogout, userData }) => {
     setFormData(p => ({ ...p, title: preset.title, body: preset.body }));
   };
 
+  // ── Image handlers ───────────────────────────────────────────────────────────
+  const handleImageFileChange = e => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const MAX_MB = 5;
+    if (file.size > MAX_MB * 1024 * 1024) {
+      setError(`Image must be smaller than ${MAX_MB} MB.`);
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file (JPG, PNG, GIF, WebP).');
+      return;
+    }
+
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const clearImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setImageUrl('');
+    if (imageInputRef.current) imageInputRef.current.value = '';
+  };
+  // ─────────────────────────────────────────────────────────────────────────────
+
   const resetForm = () => {
     setFormData({ title: '', body: '', target: 'all' });
     setScheduledAt('');
+    clearImage();
   };
 
   const isScheduled = !!scheduledAt;
@@ -261,15 +324,36 @@ const AdminCommonNotifications = ({ onLogout, userData }) => {
     setError(null);
 
     try {
-      const payload = {
-        ...formData,
-        scheduled_at: isScheduled ? toUTCISO(scheduledAt) : null,
-      };
+      let createdData;
 
-      const { data } = await API.post('/notifications/common/', payload);
+      if (imageFile) {
+        // ✅ multipart/form-data — for file upload
+        const fd = new FormData();
+        fd.append('title', formData.title);
+        fd.append('body', formData.body);
+        fd.append('target', formData.target);
+        if (isScheduled) fd.append('scheduled_at', toUTCISO(scheduledAt));
+        fd.append('image', imageFile);
+
+        const { data } = await API.post('/notifications/common/', fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        createdData = data;
+      } else {
+        // ✅ JSON — include image_url if the admin typed one in URL mode
+        const payload = {
+          ...formData,
+          scheduled_at: isScheduled ? toUTCISO(scheduledAt) : null,
+          ...(imageUploadMode === 'url' && imageUrl.trim()
+            ? { image_url: imageUrl.trim() }
+            : {}),
+        };
+        const { data } = await API.post('/notifications/common/', payload);
+        createdData = data;
+      }
 
       if (!isScheduled) {
-        const res = await API.post(`/notifications/common/${data.id}/send/`);
+        const res = await API.post(`/notifications/common/${createdData.id}/send/`);
         setSuccessMessage(res.data.message || 'Notification sent successfully!');
       } else {
         setSuccessMessage(`Notification scheduled for ${formatScheduled(scheduledAt)} ✅`);
@@ -371,11 +455,11 @@ const AdminCommonNotifications = ({ onLogout, userData }) => {
                 <label className="acn-field-label">Quick Templates</label>
                 <div className="acn-presets-row">
                   {EMOJI_PRESETS.map(p => (
-                    <button 
-                      key={p.label} 
-                      className="acn-preset-btn" 
-                      onClick={() => applyPreset(p)} 
-                      type="button" 
+                    <button
+                      key={p.label}
+                      className="acn-preset-btn"
+                      onClick={() => applyPreset(p)}
+                      type="button"
                       disabled={formLoading}
                       title={p.title}
                     >
@@ -411,14 +495,145 @@ const AdminCommonNotifications = ({ onLogout, userData }) => {
                 />
               </div>
 
+              {/* ── Image Attachment ─────────────────────────────────────── */}
+              <div className="acn-field">
+                <label className="acn-field-label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="12" height="12">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                  Notification Image
+                  <span className="acn-hint">(optional)</span>
+                </label>
+
+                {/* Mode toggle */}
+                <div className="acn-img-mode-toggle">
+                  <button
+                    type="button"
+                    className={`acn-img-mode-btn ${imageUploadMode === 'file' ? 'acn-img-mode-btn--active' : ''}`}
+                    onClick={() => { setImageUploadMode('file'); clearImage(); }}
+                    disabled={formLoading}
+                  >
+                    Upload File
+                  </button>
+                  <button
+                    type="button"
+                    className={`acn-img-mode-btn ${imageUploadMode === 'url' ? 'acn-img-mode-btn--active' : ''}`}
+                    onClick={() => { setImageUploadMode('url'); clearImage(); }}
+                    disabled={formLoading}
+                  >
+                    Paste URL
+                  </button>
+                </div>
+
+                {imageUploadMode === 'file' ? (
+                  imagePreview ? (
+                    /* Preview of selected file */
+                    <div className="acn-img-preview-wrap">
+                      <img src={imagePreview} alt="Preview" className="acn-img-preview" />
+                      <div className="acn-img-preview-meta">
+                        <span className="acn-img-preview-name">{imageFile?.name}</span>
+                        <span className="acn-img-preview-size">
+                          {imageFile ? `${(imageFile.size / 1024).toFixed(0)} KB` : ''}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className="acn-img-clear-btn"
+                        onClick={clearImage}
+                        disabled={formLoading}
+                        title="Remove image"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <line x1="18" y1="6" x2="6" y2="18"/>
+                          <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    /* Drop zone */
+                    <div
+                      className="acn-img-dropzone"
+                      onClick={() => !formLoading && imageInputRef.current?.click()}
+                      onDragOver={e => e.preventDefault()}
+                      onDrop={e => {
+                        e.preventDefault();
+                        const file = e.dataTransfer.files?.[0];
+                        if (file) {
+                          const fakeEvent = { target: { files: [file] } };
+                          handleImageFileChange(fakeEvent);
+                        }
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="acn-img-dropzone-icon">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                      <span className="acn-img-dropzone-text">
+                        <strong>Click to upload</strong> or drag & drop
+                      </span>
+                      <span className="acn-img-dropzone-hint">JPG, PNG, GIF, WebP · max 5 MB</span>
+                      <input
+                        ref={imageInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="acn-img-hidden-input"
+                        onChange={handleImageFileChange}
+                        disabled={formLoading}
+                      />
+                    </div>
+                  )
+                ) : (
+                  /* URL input mode */
+                  <div className="acn-img-url-wrap">
+                    <input
+                      type="url"
+                      className="acn-input"
+                      placeholder="https://example.com/image.jpg"
+                      value={imageUrl}
+                      onChange={e => setImageUrl(e.target.value)}
+                      disabled={formLoading}
+                    />
+                    {imageUrl.trim() && (
+                      <div className="acn-img-url-preview-wrap">
+                        <img
+                          src={imageUrl}
+                          alt="URL Preview"
+                          className="acn-img-url-preview"
+                          onError={e => { e.target.style.display = 'none'; }}
+                          onLoad={e => { e.target.style.display = 'block'; }}
+                          style={{ display: 'none' }}
+                        />
+                        <button
+                          type="button"
+                          className="acn-img-clear-btn"
+                          onClick={clearImage}
+                          disabled={formLoading}
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                          </svg>
+                          Clear
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              {/* ── End Image Attachment ──────────────────────────────────── */}
+
               <div className="acn-grid-2">
                 <div className="acn-field">
                   <label className="acn-field-label">Send To <span className="acn-req">*</span></label>
-                  <select 
-                    className="acn-input" 
-                    name="target" 
-                    value={formData.target} 
-                    onChange={handleInputChange} 
+                  <select
+                    className="acn-input"
+                    name="target"
+                    value={formData.target}
+                    onChange={handleInputChange}
                     disabled={formLoading}
                   >
                     <option value="all">All Users</option>
@@ -489,9 +704,9 @@ const AdminCommonNotifications = ({ onLogout, userData }) => {
                 <h2 className="acn-history-title">History</h2>
                 <p className="acn-history-sub">Auto-refreshes every 30 seconds</p>
               </div>
-              <button 
-                className="acn-refresh-btn" 
-                onClick={fetchNotifications} 
+              <button
+                className="acn-refresh-btn"
+                onClick={fetchNotifications}
                 disabled={listLoading}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={listLoading ? 'acn-spin' : ''}>
