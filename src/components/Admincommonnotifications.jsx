@@ -324,37 +324,32 @@ const AdminCommonNotifications = ({ onLogout, userData }) => {
     setError(null);
 
     try {
-      let createdData;
+      // ✅ Always use FormData — backend requires multipart/form-data
+      // This fixes the 415 Unsupported Media Type error when no image is attached
+      const fd = new FormData();
+      fd.append('title', formData.title);
+      fd.append('body', formData.body);
+      fd.append('target', formData.target);
 
-      if (imageFile) {
-        // ✅ multipart/form-data — for file upload
-        const fd = new FormData();
-        fd.append('title', formData.title);
-        fd.append('body', formData.body);
-        fd.append('target', formData.target);
-        if (isScheduled) fd.append('scheduled_at', toUTCISO(scheduledAt));
-        fd.append('image', imageFile);
-
-        const { data } = await API.post('/notifications/common/', fd, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        createdData = data;
-      } else {
-        // ✅ JSON — include image_url if the admin typed one in URL mode
-        const payload = {
-          ...formData,
-          scheduled_at: isScheduled ? toUTCISO(scheduledAt) : null,
-          ...(imageUploadMode === 'url' && imageUrl.trim()
-            ? { image_url: imageUrl.trim() }
-            : {}),
-        };
-        const { data } = await API.post('/notifications/common/', payload);
-        createdData = data;
+      if (isScheduled) {
+        fd.append('scheduled_at', toUTCISO(scheduledAt));
       }
 
+      if (imageFile) {
+        // File upload mode
+        fd.append('image', imageFile);
+      } else if (imageUploadMode === 'url' && imageUrl.trim()) {
+        // URL mode
+        fd.append('image_url', imageUrl.trim());
+      }
+
+      // ✅ Backend now handles send on create automatically:
+      //    - No scheduled_at → sends immediately and marks as 'sent'
+      //    - With scheduled_at → saves as 'scheduled', APScheduler fires at that time
+      const { data: createdData } = await API.post('/notifications/common/', fd);
+
       if (!isScheduled) {
-        const res = await API.post(`/notifications/common/${createdData.id}/send/`);
-        setSuccessMessage(res.data.message || 'Notification sent successfully!');
+        setSuccessMessage(createdData.message || 'Notification sent successfully!');
       } else {
         setSuccessMessage(`Notification scheduled for ${formatScheduled(scheduledAt)} ✅`);
       }
