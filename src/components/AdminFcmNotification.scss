@@ -1,0 +1,589 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+$primary:      #1a472a;
+$accent:       #F5A300;
+$danger:       #cc0000;
+$success:      #00875a;
+$info-color:   #b07800;
+$text-dark:    #1a1a1a;
+$text-light:   #555;
+$text-lighter: #888;
+$bg:           #f4f6fb;
+$surface:      #ffffff;
+$surface-2:    #f8f8f8;
+$divider:      #e0e0e0;
+$radius:       10px;
+$radius-sm:    6px;
+$shadow-card:  0 4px 24px rgba(0,0,0,0.08);
+
+*, *::before, *::after { box-sizing: border-box; }
+
+// ── Layout ────────────────────────────────────────────────────────────────────
+.afcm-container {
+  display: flex;
+  min-height: 100vh;
+  background: $bg;
+  font-family: 'Segoe UI', 'Inter', -apple-system, sans-serif;
+  font-size: 13px;
+  color: $text-dark;
+  -webkit-font-smoothing: antialiased;
+}
+
+.afcm-main {
+  flex: 1;
+  min-width: 0;
+  transition: margin-left 0.2s ease;
+
+  &.afcm-sidebar-open   { margin-left: 240px; }
+  &.afcm-sidebar-closed { margin-left: 64px; }
+
+  @media (max-width: 900px) {
+    &.afcm-sidebar-open,
+    &.afcm-sidebar-closed { margin-left: 0 !important; }
+  }
+}
+
+.afcm-wrapper {
+  padding: 24px;
+  max-width: 640px;
+
+  @media (max-width: 768px) { padding: 8px 12px 24px; }
+}
+
+// ── Mobile topbar ─────────────────────────────────────────────────────────────
+.afcm-mobile-topbar {
+  display: none;
+
+  @media (max-width: 767px) {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: $surface;
+    border-bottom: 1px solid $divider;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+}
+
+.afcm-hamburger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid $divider;
+  border-radius: $radius-sm;
+  background: $surface;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s;
+
+  svg { width: 15px; height: 15px; }
+  &:hover { background: $bg; }
+}
+
+.afcm-mobile-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: $text-dark;
+}
+
+// ── Page header ───────────────────────────────────────────────────────────────
+.afcm-page-header {
+  margin-bottom: 20px;
+
+  @media (max-width: 767px) { display: none; }
+}
+
+.afcm-page-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: $text-dark;
+  margin: 0 0 4px;
+}
+
+.afcm-page-sub {
+  font-size: 13px;
+  color: $text-lighter;
+  margin: 0;
+}
+
+// ── Card ──────────────────────────────────────────────────────────────────────
+.afcm-card {
+  background: $surface;
+  border-radius: 16px;
+  box-shadow: $shadow-card;
+  padding: 28px 28px 24px;
+  width: 100%;
+
+  @media (max-width: 600px) { padding: 16px 14px; border-radius: 12px; }
+}
+
+// ── Warning box ───────────────────────────────────────────────────────────────
+.afcm-warning {
+  background: #fff8e6;
+  border: 1px solid #ffe0a0;
+  border-radius: $radius;
+  padding: 12px 14px;
+  font-size: 12px;
+  color: $info-color;
+  margin-bottom: 16px;
+  line-height: 1.7;
+}
+
+// ── Steps box ─────────────────────────────────────────────────────────────────
+.afcm-steps {
+  background: $surface-2;
+  border-radius: $radius;
+  padding: 14px 16px;
+  font-size: 12px;
+  color: $text-light;
+  line-height: 2.2;
+  margin-bottom: 4px;
+
+  a { color: $accent; text-decoration: none; &:hover { text-decoration: underline; } }
+}
+
+.afcm-badge {
+  display: inline-block;
+  background: $accent;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 5px;
+  padding: 1px 6px;
+  margin-right: 4px;
+}
+
+// ── Form body ─────────────────────────────────────────────────────────────────
+.afcm-form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.afcm-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: $text-dark;
+  margin: 24px 0 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.afcm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 16px;
+}
+
+.afcm-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: $text-light;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.afcm-hint {
+  font-size: 11px;
+  color: #aaa;
+  line-height: 1.6;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+
+  code {
+    background: #f4f4f4;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+
+  b { color: $text-light; }
+}
+
+.afcm-input,
+.afcm-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid $divider;
+  border-radius: $radius;
+  font-size: 14px;
+  color: $text-dark;
+  outline: none;
+  transition: border 0.2s;
+  font-family: 'Segoe UI', 'Inter', sans-serif;
+  background: $surface;
+
+  &:focus    { border-color: $accent; }
+  &:disabled { background: #fafafa; opacity: 0.7; cursor: not-allowed; }
+  &::placeholder { color: #bbb; }
+}
+
+.afcm-textarea {
+  resize: vertical;
+  line-height: 1.5;
+  font-size: 13px;
+}
+
+.afcm-mono {
+  font-family: monospace !important;
+  font-size: 12px !important;
+}
+
+// ── Generate token button ─────────────────────────────────────────────────────
+.afcm-btn-token {
+  margin-top: 12px;
+  width: 100%;
+  padding: 10px;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  &:hover:not(:disabled)  { background: #333; }
+  &:disabled { background: #ccc; cursor: not-allowed; }
+}
+
+// ── Token status ──────────────────────────────────────────────────────────────
+.afcm-token-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.afcm-token-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ddd;
+  flex-shrink: 0;
+
+  &.active { background: #00B894; }
+  &.error  { background: #FF3B30; }
+}
+
+// ── Divider ───────────────────────────────────────────────────────────────────
+.afcm-divider {
+  height: 1px;
+  background: #f0f0f0;
+  margin: 24px 0;
+}
+
+// ── Send button ───────────────────────────────────────────────────────────────
+.afcm-btn-send {
+  width: 100%;
+  padding: 13px;
+  background: $accent;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  &:hover:not(:disabled)  { background: #e09500; }
+  &:disabled { background: #ccc; cursor: not-allowed; }
+}
+
+// ── Spinner ───────────────────────────────────────────────────────────────────
+.afcm-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: afcmSpin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes afcmSpin { to { transform: rotate(360deg); } }
+
+// ── Result box ────────────────────────────────────────────────────────────────
+.afcm-result {
+  margin-top: 20px;
+  padding: 14px;
+  border-radius: $radius;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: monospace;
+  line-height: 1.6;
+
+  &--success {
+    background: #e6f9f0;
+    color: $success;
+    border: 1px solid #b2ecd4;
+  }
+
+  &--error {
+    background: #fff0f0;
+    color: $danger;
+    border: 1px solid #ffcccc;
+  }
+
+  &--info {
+    background: #fff8e6;
+    color: $info-color;
+    border: 1px solid #ffe0a0;
+  }
+}
+
+// ── Token picker ──────────────────────────────────────────────────────────────
+.afcm-refresh-tokens-btn {
+  margin-left: auto;
+  background: none;
+  border: 1px solid $divider;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: $text-light;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.15s;
+
+  &:hover:not(:disabled) { background: #f0f0f0; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.afcm-token-picker {
+  position: relative;
+  margin-bottom: 6px;
+}
+
+.afcm-token-picker-trigger {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border: 1.5px solid $divider;
+  border-radius: $radius;
+  background: $surface;
+  cursor: pointer;
+  font-size: 13px;
+  color: $text-light;
+  transition: border-color 0.2s;
+  user-select: none;
+
+  svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+  span { flex: 1; }
+
+  &:hover { border-color: $accent; }
+}
+
+.afcm-chevron {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+
+  &--open { transform: rotate(180deg); }
+}
+
+.afcm-token-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: $surface;
+  border: 1.5px solid $divider;
+  border-radius: $radius;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.afcm-token-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f0f0;
+
+  svg { width: 14px; height: 14px; flex-shrink: 0; color: #aaa; }
+}
+
+.afcm-select-all-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid $divider;
+  border-radius: 5px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: $text-light;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.1s;
+
+  &:hover { background: #f0f0f0; }
+}
+
+.afcm-token-search {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: $text-dark;
+  background: transparent;
+  font-family: 'Segoe UI', 'Inter', sans-serif;
+
+  &::placeholder { color: #bbb; }
+}
+
+.afcm-token-list {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.afcm-token-empty {
+  padding: 16px;
+  text-align: center;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.afcm-token-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  cursor: pointer;
+  transition: background 0.1s;
+  border-bottom: 1px solid #f8f8f8;
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: #fafafa; }
+
+  &--selected { background: rgba(245, 163, 0, 0.07); }
+}
+
+.afcm-token-checkbox {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 2px solid $divider;
+  background: $surface;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s, border-color 0.1s;
+
+  .afcm-token-item--selected & {
+    background: $accent;
+    border-color: $accent;
+  }
+}
+
+.afcm-token-dropdown-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-top: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.afcm-token-dropdown-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: $text-light;
+}
+
+.afcm-apply-btn {
+  padding: 4px 14px;
+  background: $accent;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover:not(:disabled) { background: #e09500; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.afcm-clear-selection {
+  font-size: 12px;
+  color: $text-lighter;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  &:hover { color: $danger; }
+}
+
+.afcm-token-item-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.afcm-token-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.afcm-token-item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: $text-dark;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.afcm-token-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #aaa;
+}
+
+.afcm-token-item-device {
+  background: #f0f0f0;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: $text-light;
+}
+
+.afcm-spinner--dark {
+  border-color: rgba(0,0,0,.15);
+  border-top-color: $text-dark;
+}

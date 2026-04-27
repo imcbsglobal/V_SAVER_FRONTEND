@@ -8,6 +8,116 @@ import AdminSidebar from './Adminsidebar';
 import './Admincommonnotifications.scss';
 import API from '../services/api';
 
+// ── FCM V1 constants & helpers (same as AdminFcmNotification) ─────────────────
+const PROJECT_ID = 'vsaver-6f5a7';
+
+const SA = {
+  type: 'service_account',
+  project_id: 'vsaver-6f5a7',
+  private_key_id: 'd66874c450820c474be73f72183217af260dd78c',
+  private_key: '-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC1G5vU8zW5ThBe\nAculrfuhtTgAXiFrChiP63jv04aVepBt2NamAf8kfNOXOGHW+9kuDXABhmkOWy6k\npzv9fn6rAbm5bTv0evQ2mwZFVeDajTtvuDkMjXV1gE4aoEa9T/TavUi58G7+opMh\nze8kBO6X9c43vJid0YJLYdEuTORIUNQqYyDKA/aMNCW2HO8sV0iGYCHnqprwWsK2\nM6gVb8TAftZNcp+/m6ZM8xaVbqayAg79ezDtBfS4LGbglH3lBBRoaLucYNzzIsXB\nvJk+B3Q3fCSHlgBKhW6XvQxHCpHSqB9se9dv2DC+uxiYBhMtnsc/rYzluUsS08b5\n7I1T3qlTAgMBAAECggEAKH0VIA0FcDmDEDkviYk1bcgBTpe8udzmc9ptTZSJDIb7\nngsxpahhnYsolLCesvzX52NKrJSbjQGWkmnuz/PFJr76gflpQ3Vvfnu28a5K2CFl\n7cqOOn+viEbYbzxwxCcJcxOJHESj09qNsSuEcJWHr8JcyXoo1nN9wROLu+Gl0YKc\nJuS6IyVms7RPUssVcDw4b2Da0KNveJrzVCEU6GWAFuY9fDAK3pjuwGcvX82e2Lmq\n4YySBU0a+hRL4Yf2jPzSvgPCGFufbfEtlyyCIAjI4W6tAsjf0TjuqPSOciRuW5S8\n4Giy6VhDD+JmrABTgv7Y4Q8C+UGXm8CJBGculUMzLQKBgQDgtR8JtPbx/sUOLrUg\nfQ7fbpxtKx1qERaBSIYnvP9C9zIblN5geSTraHrSIKjnl/sq2a4/KjSz3dTVpvoM\n6XwSAEZA7JDkmmFPs25kIdSaBYEoPYyrBuKaBlRFphMT16oFyHH3UfBintKXa1Su\nmRQYo8d20/TbiR0540T5SkJMDQKBgQDOVCYUlfsISi6BACST0pecZATFSIC2qv+o\nxNCzBDSjJuvEYnb/PFVIB8Y5sXayoQCrR7mgjyzFIEe4ZtD/hmWne2yoRVJc+qV1\n8eSvZDjqs/wCNo52v6/v1gL/6MXKkAy+Mf5Wgq87AK9wI/cksdrApHHd1n2GhGPi\nLCazVPuS3wKBgBPj1Fh+nTE0dOrZdYznpO5gExaSr2rZEl3lNoLD9vBNgzDvz3NI\npdz0hZKd83V0fXYAiKzspneZViKHQjDsZeAOCCntBrJFfAGbB1VzrSbo/9K5B/+H\nf31UvBbiKWQjPdh/Mp9KsHV6S3e9t2QxBpdbv+cjwdPA4kZieJN8YDvtAoGBALvq\nF+SX1FHwffovTyDyo/JjhZTIO7Iie0YSOqFQK0CMqh3qL8a2BFXd/sN8xUZbLGjS\nolWBEJ1YkPl5as/Ob7bhykxXFnRoM1oAPO8gsFXSJqs9VPMCEhK1L3YzYjDikTiH\n/8R6sW1jamUP3H8nHLxnCO2p9BkXaoELBRQ/SgCxAoGBANqZ0NPFtsXaPwJgOtI+\nITKOXhCGu6s6p37ZndqiSXL4+qdmSgwKHPJQICfzPN2LEb9rwfJlhx245Y4/M25V\nL/N+BM3YCJxIkj4moFBnkuIWkl7aUI+mM/YpRhWA49b7BYH9jC5t+UdqqGy4fJZJ\nWhVeaPvKw0x6ey+ZwN1EK89E\n-----END PRIVATE KEY-----\n',
+  client_email: 'firebase-adminsdk-fbsvc@vsaver-6f5a7.iam.gserviceaccount.com',
+  client_id: '116287954951429008618',
+  auth_uri: 'https://accounts.google.com/o/oauth2/auth',
+  token_uri: 'https://oauth2.googleapis.com/token',
+  auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
+  client_x509_cert_url: 'https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40vsaver-6f5a7.iam.gserviceaccount.com',
+  universe_domain: 'googleapis.com',
+};
+
+function loadJsrsasign() {
+  return new Promise((resolve, reject) => {
+    if (window.KJUR) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js';
+    s.onload  = resolve;
+    s.onerror = () => reject(new Error('Failed to load jsrsasign'));
+    document.head.appendChild(s);
+  });
+}
+
+async function getFcmOAuthToken() {
+  await loadJsrsasign();
+  const now = Math.floor(Date.now() / 1000);
+  const jwt = window.KJUR.jws.JWS.sign(
+    'RS256',
+    JSON.stringify({ alg: 'RS256', typ: 'JWT' }),
+    JSON.stringify({
+      iss  : SA.client_email,
+      scope: 'https://www.googleapis.com/auth/firebase.messaging',
+      aud  : 'https://oauth2.googleapis.com/token',
+      iat  : now,
+      exp  : now + 3600,
+    }),
+    SA.private_key
+  );
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method : 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body   : new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion : jwt,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.access_token)
+    throw new Error(data.error_description || data.error || 'Token exchange failed');
+  return data.access_token;
+}
+
+async function sendFcmToAll(title, body, imageUrl) {
+  // Fetch all FCM tokens from DB
+  const token = localStorage.getItem('access_token');
+  const res = await fetch('https://vsaver.in/api/push/fcm-tokens/', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  const fcmTokens = (data.tokens || []).map(t => t.fcm_token).filter(Boolean);
+
+  if (fcmTokens.length === 0) return { sent: 0, total: 0 };
+
+  const oauthToken = await getFcmOAuthToken();
+  let sent = 0;
+
+  for (const tok of fcmTokens) {
+    const payload = {
+      message: {
+        token: tok,
+        notification: {
+          title,
+          body,
+          ...(imageUrl && { image: imageUrl }),
+        },
+        android: {
+          notification: {
+            channel_id: 'default',
+            ...(imageUrl && { image: imageUrl }),
+          },
+        },
+        ...(imageUrl && { data: { imageUrl } }),
+      },
+    };
+    try {
+      const r = await fetch(
+        `https://fcm.googleapis.com/v1/projects/${PROJECT_ID}/messages:send`,
+        {
+          method : 'POST',
+          headers: {
+            'Content-Type' : 'application/json',
+            'Authorization': `Bearer ${oauthToken}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+      const d = await r.json();
+      if (r.ok && d.name) sent++;
+    } catch { /* skip failed token */ }
+  }
+
+  return { sent, total: fcmTokens.length };
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 const EMOJI_PRESETS = [
   { label: 'Flash Sale ⚡',     title: 'Flash Sale ⚡',              body: "Limited time offer! Grab incredible discounts before they're gone. Shop now and save big! 🔥" },
   { label: 'New Offer 🎁',      title: 'New Offer Just Dropped 🎁',  body: 'A brand new offer is waiting for you! Check it out now and grab the best deals before they expire. 🛍️' },
@@ -174,7 +284,7 @@ function NotifCard({ n, onDelete, deleteId }) {
         {n.status === 'sent' && (
           <span className="acn-notif-card-devices">
             <PeopleIcon />
-            {n.sent_count} devices reached
+            Sent
           </span>
         )}
         {n.status === 'scheduled' && (
@@ -323,9 +433,17 @@ const AdminCommonNotifications = ({ onLogout, userData }) => {
     setFormLoading(true);
     setError(null);
 
+    // Resolve image URL for FCM
+    let resolvedImageUrl = '';
+    if (imageFile) {
+      // For file uploads we need a public URL — use object URL as preview only;
+      // actual public URL comes after backend save below
+    } else if (imageUploadMode === 'url' && imageUrl.trim()) {
+      resolvedImageUrl = imageUrl.trim();
+    }
+
     try {
-      // ✅ Always use FormData — backend requires multipart/form-data
-      // This fixes the 415 Unsupported Media Type error when no image is attached
+      // 1️⃣  Save to backend (existing flow — unchanged)
       const fd = new FormData();
       fd.append('title', formData.title);
       fd.append('body', formData.body);
@@ -336,20 +454,40 @@ const AdminCommonNotifications = ({ onLogout, userData }) => {
       }
 
       if (imageFile) {
-        // File upload mode
         fd.append('image', imageFile);
       } else if (imageUploadMode === 'url' && imageUrl.trim()) {
-        // URL mode
         fd.append('image_url', imageUrl.trim());
       }
 
-      // ✅ Backend now handles send on create automatically:
-      //    - No scheduled_at → sends immediately and marks as 'sent'
-      //    - With scheduled_at → saves as 'scheduled', APScheduler fires at that time
       const { data: createdData } = await API.post('/notifications/common/', fd);
 
+      // Resolve public image URL from saved record for FCM
+      resolvedImageUrl = createdData.resolved_image_url || createdData.image_url || resolvedImageUrl;
+
+      // 2️⃣  Send via FCM V1 directly (only for immediate sends, not scheduled)
       if (!isScheduled) {
-        setSuccessMessage(createdData.message || 'Notification sent successfully!');
+        try {
+          const { sent, total } = await sendFcmToAll(
+            formData.title.trim(),
+            formData.body.trim(),
+            resolvedImageUrl
+          );
+
+          // Patch sent_count back to DB so history shows correct device count
+          try {
+            await API.patch(`/notifications/common/${createdData.id}/`, { sent_count: sent });
+          } catch { /* non-fatal — history will just show 0 */ }
+
+          setSuccessMessage(
+            `Notification sent to ${sent} of ${total} device(s) via FCM V1 ✅`
+          );
+        } catch (fcmErr) {
+          // FCM failed but backend save succeeded — still show success
+          setSuccessMessage(
+            (createdData.message || 'Notification saved.') +
+            ` (FCM send failed: ${fcmErr.message})`
+          );
+        }
       } else {
         setSuccessMessage(`Notification scheduled for ${formatScheduled(scheduledAt)} ✅`);
       }

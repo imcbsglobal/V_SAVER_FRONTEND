@@ -11,6 +11,7 @@ import AdminOfferMaster from "./components/AdminOfferMaster";
 import AdminBranchMaster from "./components/Adminbranchmaster";
 import BranchOffersPage from "./components/BranchOffersPage";
 import AdminCommonNotifications from "./components/Admincommonnotifications";
+// import AdminFcmNotification from "./components/AdminFcmNotification";
 import { setAuthToken } from "./services/api";
 import './App.css';
 
@@ -177,6 +178,16 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+
+        {/* Admin FCM Notification - commented out as component file is not available */}
+        {/* <Route
+          path="/admin/fcm-notification"
+          element={
+            <ProtectedRoute allowedUserType="admin">
+              <AdminFcmNotification onLogout={handleLogout} userData={userData} />
+            </ProtectedRoute>
+          }
+        /> */}
 
         {/* ========== USER ROUTES ========== */}
 

@@ -46,6 +46,16 @@ const AdminSidebar = ({ isSidebarOpen, onToggleSidebar, onLogout, adminName = 'A
         </svg>
       ),
     },
+    // {
+    //   id: 'fcm-notification',
+    //   label: 'FCM Notification',
+    //   route: '/admin/fcm-notification',
+    //   icon: (
+    //     <svg viewBox="0 0 24 24" fill="currentColor">
+    //       <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-1 14H5c-.55 0-1-.45-1-1V7l8 5 8-5v10c0 .55-.45 1-1 1zm-7-7L4 6h16l-8 5z" />
+    //     </svg>
+    //   ),
+    // },
   ];
 
   const isActive = (route) => location.pathname === route;
